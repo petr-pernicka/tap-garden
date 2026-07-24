@@ -1,5 +1,6 @@
 [workspace]
-members = ["tap-core"]
+members = ["tap-cli","tap-core"]
+resolver = "3"
 
 [profile.release]
 codegen-units = 1

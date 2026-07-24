@@ -1,1 +1,3 @@
-pub mod mixture_flow;
+mod mixture_flow;
+
+pub use mixture_flow::MixtureFlow;
