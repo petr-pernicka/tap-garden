@@ -1,0 +1,13 @@
+[workspace]
+members = ["tap-core"]
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+panic = "abort"
+
+[profile.release-debug]
+inherits = "release"
+debug-assertions = true
+overflow-checks = true
+panic = "unwind"
