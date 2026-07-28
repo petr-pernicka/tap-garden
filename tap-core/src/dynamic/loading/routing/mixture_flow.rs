@@ -12,6 +12,16 @@ impl MixtureFlow {
         debug_assert!(destinations.len() == portions.len());
         debug_assert!(portions.iter().all(|x| *x >= 0.0));
         debug_assert!((portions.iter().sum::<f64>() - 1.0).abs() < 1e-10);
+        debug_assert!({
+            let mut is_ascending = true;
+            for i in 1..destinations.len() {
+                if destinations[i] <= destinations[i - 1] {
+                    is_ascending = false;
+                    break;
+                }
+            }
+            is_ascending
+        });
 
         MixtureFlow {
             total_flow,
@@ -170,6 +180,13 @@ mod tests {
     }
 
     #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic]
+    fn test_new_bad5() {
+        let _mf = MixtureFlow::new(2.5, vec![1, 0], vec![0.3, 0.3]);
+    }
+
+    #[test]
     fn test_zero() {
         let mf = MixtureFlow::zero();
 
@@ -227,13 +244,23 @@ mod tests {
     }
 
     #[test]
-    fn test_copy_with_flow() {
+    fn test_copy_with_flow1() {
         let mf = MixtureFlow::new(2.5, vec![0, 1], vec![0.4, 0.6]);
         let mf2 = mf.copy_with_flow(4.1);
 
         assert_eq!(mf2.total_flow, 4.1);
         assert_eq!(*mf2.destinations, [0, 1]);
         assert_eq!(*mf2.portions, [0.4, 0.6]);
+    }
+
+    #[test]
+    fn test_copy_with_flow2() {
+        let mf = MixtureFlow::new(2.5, vec![0, 1], vec![0.4, 0.6]);
+        let mf2 = mf.copy_with_flow(0.0);
+
+        assert_eq!(mf2.total_flow, 0.0);
+        assert_eq!(mf2.destinations.len(), 0);
+        assert_eq!(mf2.portions.len(), 0);
     }
 
     #[test]
