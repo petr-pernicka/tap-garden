@@ -51,10 +51,10 @@ impl TimeDependentODM {
         let mean = (time_steps - 1) as f64 / 2.;
 
         let mut sum = 0.;
-        for i in 0..time_steps as usize {
+        for (i, val) in distribution.iter_mut().enumerate() {
             let x = i as f64 - mean;
-            distribution[i] = (- x * x / (2. * std * std)).exp();
-            sum += distribution[i];
+            *val = (- x * x / (2. * std * std)).exp();
+            sum += *val;
         }
 
         distribution.iter_mut()

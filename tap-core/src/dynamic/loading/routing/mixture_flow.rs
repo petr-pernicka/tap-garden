@@ -1,9 +1,20 @@
+use std::ops::Add;
+
 // TODO substitute Box with Rc for faster clones
+// TODO potentially single box of (u32, f64)?
 #[derive(Debug)]
 pub struct MixtureFlow {
     total_flow: f64,
     destinations: Box<[u32]>,
     portions: Box<[f64]>,
+}
+
+impl Add<&MixtureFlow> for &MixtureFlow {
+    type Output = MixtureFlow;
+
+    fn add(self, rhs: &MixtureFlow) -> Self::Output {
+        self.plus(rhs)
+    }
 }
 
 impl MixtureFlow {
@@ -49,12 +60,14 @@ impl MixtureFlow {
     pub fn destination(&self, index: usize) -> u32 {
         debug_assert!(index < self.size());
 
+        // UNSAFE: If the program doesn't panic with debug assets enabled, UB will not occur.
         unsafe { *self.destinations.get_unchecked(index) }
     }
 
     pub fn portion(&self, index: usize) -> f64 {
         debug_assert!(index < self.size());
 
+        // UNSAFE: If the program doesn't panic with debug assets enabled, UB will not occur.
         unsafe { *self.portions.get_unchecked(index) }
     }
 
