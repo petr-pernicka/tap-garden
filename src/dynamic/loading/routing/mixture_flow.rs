@@ -60,14 +60,14 @@ impl MixtureFlow {
     pub fn destination(&self, index: usize) -> u32 {
         debug_assert!(index < self.size());
 
-        // UNSAFE: If the program doesn't panic with debug assets enabled, UB will not occur.
+        // UNSAFE: If the program doesn't panic with debug asserts enabled, UB will not occur.
         unsafe { *self.destinations.get_unchecked(index) }
     }
 
     pub fn portion(&self, index: usize) -> f64 {
         debug_assert!(index < self.size());
 
-        // UNSAFE: If the program doesn't panic with debug assets enabled, UB will not occur.
+        // UNSAFE: If the program doesn't panic with debug asserts enabled, UB will not occur.
         unsafe { *self.portions.get_unchecked(index) }
     }
 
@@ -85,6 +85,7 @@ impl MixtureFlow {
         }
     }
 
+    // TODO subject to hyperoptimization - pushes are unnecessarily costly
     pub fn plus(&self, other: &MixtureFlow) -> MixtureFlow {
         if self.total_flow == 0.0 {
             return MixtureFlow {

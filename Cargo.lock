@@ -549,14 +549,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tap-cli"
-version = "0.1.0"
-dependencies = [
- "tap-core",
-]
-
-[[package]]
-name = "tap-core"
+name = "tap-garden"
 version = "0.1.0"
 dependencies = [
  "criterion",
