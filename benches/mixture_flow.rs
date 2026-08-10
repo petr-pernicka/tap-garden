@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use rand::prelude::*;
 use std::hint::black_box;
-use tap_garden::dynamic::loading::routing::MixtureFlow;
+use tap_garden::dynamic::routing::MixtureFlow;
 
 fn make_flow(n: usize, offset: u32) -> MixtureFlow {
     let destinations: Vec<u32> = (0..n as u32).map(|i| i * 2 + offset).collect();
