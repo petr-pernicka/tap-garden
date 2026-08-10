@@ -76,7 +76,7 @@ impl TimeDependentODM {
 
         for i in 0..zones {
             for j in 0..zones {
-                let static_demand = odm.get(i, j);
+                let static_demand = odm[(i, j)];
 
                 for t in 0..distribution.len() {
                     demand[t * zones * zones + i * zones + j] = static_demand * distribution[t];

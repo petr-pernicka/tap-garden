@@ -34,7 +34,7 @@ impl MixtureFlow {
             is_ascending
         });
 
-        MixtureFlow {
+        Self {
             total_flow,
             destinations: destinations.into_boxed_slice(),
             portions: portions.into_boxed_slice(),
@@ -42,7 +42,7 @@ impl MixtureFlow {
     }
 
     pub fn zero() -> Self {
-        MixtureFlow {
+        Self {
             total_flow: 0.0,
             destinations: Box::from([]),
             portions: Box::from([]),
@@ -75,10 +75,10 @@ impl MixtureFlow {
         debug_assert!(new_flow >= 0.0);
 
         if new_flow == 0.0 {
-            return MixtureFlow::zero();
+            return Self::zero();
         }
 
-        MixtureFlow {
+        Self {
             total_flow: new_flow,
             destinations: self.destinations.clone(),
             portions: self.portions.clone(),
@@ -86,9 +86,9 @@ impl MixtureFlow {
     }
 
     // TODO subject to hyperoptimization - pushes are unnecessarily costly
-    pub fn plus(&self, other: &MixtureFlow) -> MixtureFlow {
+    pub fn plus(&self, other: &Self) -> Self {
         if self.total_flow == 0.0 {
-            return MixtureFlow {
+            return Self {
                 total_flow: other.total_flow,
                 destinations: other.destinations.clone(),
                 portions: other.portions.clone(),
@@ -96,7 +96,7 @@ impl MixtureFlow {
         }
 
         if other.total_flow == 0.0 {
-            return MixtureFlow {
+            return Self {
                 total_flow: self.total_flow,
                 destinations: self.destinations.clone(),
                 portions: self.portions.clone(),
@@ -148,7 +148,7 @@ impl MixtureFlow {
             j += 1;
         }
 
-        MixtureFlow::new(result_flow, result_destinations, result_portions)
+        Self::new(result_flow, result_destinations, result_portions)
     }
 }
 
