@@ -1,5 +1,5 @@
-pub mod matrix;
 mod bit_set;
+pub mod matrix;
 
-pub use matrix::Matrix;
 pub use bit_set::BitSet32;
+pub use matrix::Matrix;

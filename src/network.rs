@@ -78,7 +78,6 @@ impl Network {
 
         let mut mirror_links = vec![None; data.len()];
         for link in &outgoing_links {
-
             let range = incoming_indices[link.tail]..incoming_indices[link.tail + 1];
             if let Some(reverse) = incoming_links[range]
                 .iter()

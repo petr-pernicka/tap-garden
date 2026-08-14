@@ -205,8 +205,8 @@ mod tests {
         let mf = MixtureFlow::zero();
 
         assert_eq!(mf.total_flow, 0.0);
-        assert_eq!(*mf.destinations, []);
-        assert_eq!(*mf.portions, []);
+        assert!(mf.destinations.is_empty());
+        assert!(mf.portions.is_empty());
     }
 
     #[test]
