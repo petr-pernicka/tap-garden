@@ -27,8 +27,10 @@ impl NodeModel for TampereUnsignalized {
                 .iter()
                 .all(|x| (0.0..=1.).contains(x))
         );
-        debug_assert!(sending_flows.len() == self.priorities.len());
-        debug_assert!(sending_flows.iter().all(|x| *x >= 0.0));
+        debug_assert_eq!(sending_flows.len(), turning_fractions.rows());
+        debug_assert_eq!(sending_flows.len(), self.priorities.len());
+        debug_assert!(sending_flows.iter().all(|x| *x >= 0.));
+        debug_assert_eq!(receiving_flows.len(), turning_fractions.cols());
         debug_assert!(receiving_flows.iter().all(|x| *x >= 0.));
 
         let mut inflows = vec![0.; sending_flows.len()];
