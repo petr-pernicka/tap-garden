@@ -68,6 +68,10 @@ impl MixtureOutgoingFractions {
 
         self.mof_intersections[n].get_fraction(tn, d, j)
     }
+
+    pub fn destinations(&self) -> usize {
+        self.shared_data.borrow().destinations
+    }
 }
 
 struct SharedData {
