@@ -3,6 +3,7 @@ use std::ops::Range;
 
 pub struct Network {
     nodes: usize,
+    zones: usize,
     outgoing_indices: Vec<usize>,
     outgoing_links: Vec<Link>,
     incoming_indices: Vec<usize>,
@@ -20,7 +21,7 @@ pub struct Link {
 }
 
 impl Network {
-    pub fn new(data: Vec<(u32, u32)>) -> (Self, HashMap<u32, Node>) {
+    pub fn new(data: Vec<(u32, u32)>, zones: &[u32]) -> (Self, HashMap<u32, Node>) {
         debug_assert!(
             data.iter().collect::<HashSet<_>>().len() == data.len(),
             "The data contain duplicate links!"
@@ -90,6 +91,7 @@ impl Network {
         (
             Network {
                 nodes: node_index,
+                zones: zones.len(),
                 outgoing_indices,
                 outgoing_links,
                 incoming_indices,
@@ -102,6 +104,10 @@ impl Network {
 
     pub fn nodes(&self) -> Range<Node> {
         0..self.nodes
+    }
+    
+    pub fn zones(&self) -> Range<Node> {
+        0..self.zones
     }
 
     pub fn links(&self) -> &[Link] {
@@ -131,7 +137,7 @@ mod tests {
     fn test_new() {
         let data = vec![(2, 1), (2, 3), (2, 4), (4, 3), (4, 2)];
 
-        let (network, id_to_index) = Network::new(data);
+        let (network, id_to_index) = Network::new(data, &[]);
 
         assert_eq!(network.nodes, 4);
         assert_eq!(network.outgoing_indices.len(), 5);
@@ -164,6 +170,6 @@ mod tests {
     fn test_new_bad() {
         let data = vec![(2, 1), (2, 3), (2, 4), (4, 3), (4, 2), (2, 1)];
 
-        let _ = Network::new(data);
+        let _ = Network::new(data, &[]);
     }
 }
