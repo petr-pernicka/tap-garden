@@ -1,13 +1,13 @@
 use crate::data::Matrix;
 use crate::dynamic::loading::node::model::NodeModel;
-use crate::dynamic::loading::node::routing::routing_model::RoutingModel;
+use crate::dynamic::loading::node::routing::routing_model::RoutedModel;
 use crate::dynamic::routing::{MixtureFlow, MixtureOutgoingFractions};
 
 pub struct MofRoutingModel {
     node_index: usize,
 }
 
-impl RoutingModel<MixtureOutgoingFractions> for MofRoutingModel {
+impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
     fn mixture_inflows_outflows(
         &self,
         mofs: &MixtureOutgoingFractions,

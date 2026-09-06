@@ -1,11 +1,8 @@
-pub trait Lirp {
-    fn linp(&self, other: &Self, p: f64) -> Self;
-}
+use std::cmp::Ordering;
 
-impl Lirp for f64 {
-    fn linp(&self, other: &Self, p: f64) -> Self {
-        debug_assert!((0.0..=1.0).contains(&p));
+pub fn compare(a: f64, b: f64) -> Ordering {
+    debug_assert!(!f64::is_nan(a));
+    debug_assert!(!f64::is_nan(b));
 
-        (1.0 - p) * self + p * other
-    }
+    unsafe { a.partial_cmp(&b).unwrap_unchecked() }
 }

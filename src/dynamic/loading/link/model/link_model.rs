@@ -1,3 +1,4 @@
+use crate::dynamic::Cvn;
 use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 
 pub trait LinkModel<FD: FundamentalDiagram> {
@@ -6,8 +7,8 @@ pub trait LinkModel<FD: FundamentalDiagram> {
         tn: usize,
         step_size: f64,
         fd: &FD,
-        cinflow: &[f64],
-        coutflow: &[f64],
+        cinflow: &Cvn,
+        coutflow: &Cvn,
     ) -> (f64, Option<f64>);
 
     fn receiving_flow(
@@ -15,7 +16,7 @@ pub trait LinkModel<FD: FundamentalDiagram> {
         tn: usize,
         step_size: f64,
         fd: &FD,
-        cinflow: &[f64],
-        coutflow: &[f64],
+        cinflow: &Cvn,
+        coutflow: &Cvn,
     ) -> (f64, Option<f64>);
 }

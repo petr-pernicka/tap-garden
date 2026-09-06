@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::ops::Add;
 
 // TODO substitute Box with Rc for faster clones
@@ -9,19 +10,11 @@ pub struct MixtureFlow {
     portions: Box<[f64]>,
 }
 
-impl Add<&MixtureFlow> for &MixtureFlow {
-    type Output = MixtureFlow;
-
-    fn add(self, rhs: &MixtureFlow) -> Self::Output {
-        self.plus(rhs)
-    }
-}
-
 impl MixtureFlow {
     pub fn new(total_flow: f64, destinations: Vec<u32>, portions: Vec<f64>) -> Self {
         debug_assert!(total_flow >= 0.0);
         debug_assert!(destinations.len() == portions.len());
-        debug_assert!(portions.iter().all(|x| *x >= 0.0));
+        debug_assert!(portions.iter().all(|x| *x > 0.0));
         debug_assert!((portions.iter().sum::<f64>() - 1.0).abs() < 1e-10);
         debug_assert!({
             let mut is_ascending = true;
@@ -84,48 +77,44 @@ impl MixtureFlow {
             portions: self.portions.clone(),
         }
     }
+}
+
+impl Add<&MixtureFlow> for &MixtureFlow {
+    type Output = MixtureFlow;
 
     // TODO subject to hyperoptimization - pushes are unnecessarily costly
-    pub fn plus(&self, other: &Self) -> Self {
+    fn add(self, rhs: &MixtureFlow) -> Self::Output {
         if self.total_flow == 0.0 {
-            return Self {
-                total_flow: other.total_flow,
-                destinations: other.destinations.clone(),
-                portions: other.portions.clone(),
-            };
+            return rhs.clone();
         }
 
-        if other.total_flow == 0.0 {
-            return Self {
-                total_flow: self.total_flow,
-                destinations: self.destinations.clone(),
-                portions: self.portions.clone(),
-            };
+        if rhs.total_flow == 0.0 {
+            return self.clone();
         }
 
-        let result_flow = self.total_flow + other.total_flow;
-        let mut result_destinations = Vec::<u32>::with_capacity(self.size() + other.size());
-        let mut result_portions = Vec::<f64>::with_capacity(self.size() + other.size());
+        let result_flow = self.total_flow + rhs.total_flow;
+        let mut result_destinations = Vec::<u32>::with_capacity(self.size() + rhs.size());
+        let mut result_portions = Vec::<f64>::with_capacity(self.size() + rhs.size());
 
         let m = self.size();
-        let n = other.size();
+        let n = rhs.size();
         let mut i = 0;
         let mut j = 0;
         while i < m && j < n {
-            if self.destination(i) < other.destination(j) {
+            if self.destination(i) < rhs.destination(j) {
                 result_destinations.push(self.destination(i));
                 result_portions.push(self.portion(i) * self.total_flow / result_flow);
 
                 i += 1;
-            } else if self.destination(i) > other.destination(j) {
-                result_destinations.push(other.destination(j));
-                result_portions.push(other.portion(j) * other.total_flow / result_flow);
+            } else if self.destination(i) > rhs.destination(j) {
+                result_destinations.push(rhs.destination(j));
+                result_portions.push(rhs.portion(j) * rhs.total_flow / result_flow);
 
                 j += 1;
             } else {
                 result_destinations.push(self.destination(i));
                 result_portions.push(
-                    (self.portion(i) * self.total_flow + other.portion(j) * other.total_flow)
+                    (self.portion(i) * self.total_flow + rhs.portion(j) * rhs.total_flow)
                         / result_flow,
                 );
 
@@ -142,15 +131,67 @@ impl MixtureFlow {
         }
 
         while j < n {
-            result_destinations.push(other.destination(j));
-            result_portions.push(other.portion(j) * other.total_flow / result_flow);
+            result_destinations.push(rhs.destination(j));
+            result_portions.push(rhs.portion(j) * rhs.total_flow / result_flow);
 
             j += 1;
         }
 
-        Self::new(result_flow, result_destinations, result_portions)
+        Self::Output::new(result_flow, result_destinations, result_portions)
     }
 }
+
+impl Clone for MixtureFlow {
+    fn clone(&self) -> Self {
+        Self {
+            total_flow: self.total_flow,
+            destinations: self.destinations.clone(),
+            portions: self.portions.clone(),
+        }
+    }
+}
+
+impl PartialEq<Self> for MixtureFlow {
+    fn eq(&self, other: &Self) -> bool {
+        if self.total_flow != other.total_flow {
+            return false;
+        }
+
+        self.portions == other.portions && self.destinations == other.destinations
+    }
+}
+
+impl PartialOrd for MixtureFlow {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        if self.size() != other.size() {
+            return None;
+        }
+
+        if self.destinations != other.destinations {
+            return None;
+        }
+
+        let mut less = 0u32;
+        let mut greater = 0u32;
+        for i in 0..self.size() {
+            if self.total_flow * self.portions[i] < other.total_flow * other.portions[i] {
+                less += 1;
+            }
+            if self.total_flow * self.portions[i] > other.total_flow * other.portions[i] {
+                greater += 1;
+            }
+        }
+
+        if less > 0 && greater == 0 {
+            Some(Ordering::Less)
+        } else if greater > 0 && less == 0 {
+            Some(Ordering::Greater)
+        } else {
+            None
+        }
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

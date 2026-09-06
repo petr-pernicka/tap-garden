@@ -31,7 +31,7 @@ fn mixture_flow_plus(c: &mut Criterion) {
         let b = make_flow(size, 1); // offset so destinations interleave, not fully overlap
 
         group.bench_function(format!("merge_interleaved_n{size}"), |bencher| {
-            bencher.iter(|| black_box(&a).plus(black_box(&b)))
+            bencher.iter(|| black_box(&a) + black_box(&b))
         });
     }
 
@@ -42,7 +42,7 @@ fn mixture_flow_plus(c: &mut Criterion) {
         let b = make_random_flow(&mut rng, size, universe);
 
         group.bench_function(format!("merge_random_n{size}"), |bencher| {
-            bencher.iter(|| black_box(&a).plus(black_box(&b)))
+            bencher.iter(|| black_box(&a) + black_box(&b))
         });
     }
 
@@ -50,11 +50,11 @@ fn mixture_flow_plus(c: &mut Criterion) {
     let zero = MixtureFlow::new(0.0, vec![], vec![]);
 
     group.bench_function("trivial_self_zero", |bencher| {
-        bencher.iter(|| black_box(&zero).plus(black_box(&nonzero)))
+        bencher.iter(|| black_box(&zero) + black_box(&nonzero))
     });
 
     group.bench_function("trivial_other_zero", |bencher| {
-        bencher.iter(|| black_box(&nonzero).plus(black_box(&zero)))
+        bencher.iter(|| black_box(&zero) + black_box(&nonzero))
     });
 
     group.finish();
