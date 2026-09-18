@@ -1,7 +1,7 @@
 use crate::data::function::linear_interpolation::Linp;
 use crate::data::function::monotonicity::{Monotonicity, Unconstrained};
 use std::marker::PhantomData;
-use std::ops::Index;
+use std::ops::{Add, Index};
 
 pub struct IntPiecewiseLinearFunction<Y, M = Unconstrained>
 where
@@ -48,6 +48,35 @@ where
         let b = a + 1;
 
         (self.data[a].linp(&self.data[b], p), p)
+    }
+
+    pub fn map<Z, F>(&self, f: F) -> IntPiecewiseLinearFunction<Z, Unconstrained>
+    where
+        Z: Linp<Output = Z>,
+        F: FnMut(&Y) -> Z,
+    {
+        IntPiecewiseLinearFunction {
+            data: self.data.iter().map(f).collect(),
+            monotonicity: PhantomData,
+        }
+    }
+}
+
+impl<Y, M> IntPiecewiseLinearFunction<Y, M>
+where
+    Y: Linp<Output = Y> + Add<Output = Y>,
+    M: Monotonicity<Y>,
+{
+    pub fn integrate(&self) -> Y {
+        debug_assert!(self.data.len() > 1);
+
+        let mut result = self.data[0].linp(&self.data[1], 0.5);
+
+        for i in 2..self.data.len() {
+            result = result + self.data[i - 1].linp(&self.data[i], 0.5);
+        }
+
+        result
     }
 }
 
