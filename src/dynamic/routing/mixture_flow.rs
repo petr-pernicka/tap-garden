@@ -1,5 +1,5 @@
 use std::cmp::Ordering;
-use std::ops::Add;
+use std::ops::{Add, Mul};
 
 // TODO substitute Box with Rc for faster clones
 // TODO potentially single box of (u32, f64)?
@@ -138,6 +138,15 @@ impl Add<&MixtureFlow> for &MixtureFlow {
         }
 
         Self::Output::new(result_flow, result_destinations, result_portions)
+    }
+}
+
+impl Mul<f64> for &MixtureFlow {
+    type Output = MixtureFlow;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        debug_assert!(rhs >= 0.0);
+        self.copy_with_flow(self.total_flow * rhs)
     }
 }
 
@@ -324,5 +333,53 @@ mod tests {
     fn test_copy_with_flow_bad() {
         let mf = MixtureFlow::new(2.5, vec![0, 1], vec![0.4, 0.6]);
         let _mf = mf.copy_with_flow(-4.1);
+    }
+
+    #[test]
+    fn test_add1() {
+        let mf1 = MixtureFlow::new(20., vec![0, 2], vec![0.4, 0.6]);
+        let mf2 = MixtureFlow::new(30., vec![1, 3], vec![0.2, 0.8]);
+        let result = MixtureFlow::new(50., vec![0, 1, 2, 3], vec![0.16, 0.12, 0.24, 0.48]);
+
+        assert_eq!(&mf1 + &mf2, result);
+    }
+
+    #[test]
+    fn test_add2() {
+        let mf1 = MixtureFlow::new(20., vec![0, 2], vec![0.4, 0.6]);
+        let mf2 = MixtureFlow::zero();
+
+        assert_eq!(&mf1 + &mf2, mf1);
+    }
+
+    #[test]
+    fn test_add3() {
+        let mf1 = MixtureFlow::zero();
+        let mf2 = MixtureFlow::new(20., vec![0, 2], vec![0.4, 0.6]);
+
+        assert_eq!(&mf1 + &mf2, mf2);
+    }
+
+    #[test]
+    fn test_mul1() {
+        let mf = MixtureFlow::new(2.5, vec![0, 1], vec![0.4, 0.6]);
+        let result = MixtureFlow::new(5., vec![0, 1], vec![0.4, 0.6]);
+
+        assert_eq!(&mf * 2., result);
+    }
+
+    #[test]
+    fn test_mul2() {
+        let mf = MixtureFlow::new(2.5, vec![0, 1], vec![0.4, 0.6]);
+
+        assert_eq!(&mf * 0., MixtureFlow::zero());
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    #[should_panic]
+    fn test_mul_bad() {
+        let mf = MixtureFlow::new(2.5, vec![0, 1], vec![0.4, 0.6]);
+        let _mf = &mf * -1.;
     }
 }
