@@ -1,2 +1,2 @@
-mod diagram;
-mod model;
+pub mod diagram;
+pub mod model;

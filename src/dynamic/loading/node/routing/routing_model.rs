@@ -1,6 +1,11 @@
 use crate::dynamic::loading::node::model::NodeModel;
 use crate::dynamic::routing::MixtureFlow;
 
+pub enum RoutingModel<RP> {
+    Routed(Box<dyn RoutedModel<RP>>),
+    NonRouted(Box<dyn NonRoutedModel>)
+}
+
 pub trait RoutedModel<RP> {
     fn mixture_inflows_outflows(
         &self,

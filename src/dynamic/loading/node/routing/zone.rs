@@ -15,7 +15,7 @@ impl Zone<'_> {
         }
     }
 
-    pub fn create_mixture_flow_from_odm(&self, tn: usize) -> MixtureFlow {
+    fn create_mixture_flow_from_odm(&self, tn: usize) -> MixtureFlow {
         let mut origin_flow = 0.;
         for d in 0..self.odm.zones() {
             origin_flow += self.odm.demand(self.index, d, tn);
