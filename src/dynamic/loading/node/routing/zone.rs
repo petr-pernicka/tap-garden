@@ -1,14 +1,15 @@
+use std::rc::Rc;
 use crate::dynamic::TimeDependentODM;
 use crate::dynamic::loading::node::routing::NonRoutedModel;
 use crate::dynamic::routing::MixtureFlow;
 
-pub struct Zone<'a> {
+pub struct Zone {
     index: usize,
-    odm: &'a TimeDependentODM,
+    odm: Rc<TimeDependentODM>,
 }
 
-impl Zone<'_> {
-    pub fn new(index: usize, time_dependent_odm: &TimeDependentODM) -> Zone<'_> {
+impl Zone {
+    pub fn new(index: usize, time_dependent_odm: Rc<TimeDependentODM>) -> Zone {
         Zone {
             index,
             odm: time_dependent_odm,
@@ -40,7 +41,7 @@ impl Zone<'_> {
     }
 }
 
-impl NonRoutedModel for Zone<'_> {
+impl NonRoutedModel for Zone {
     fn mixture_inflows_outflows(
         &self,
         mixture_sending_flows: &[MixtureFlow],

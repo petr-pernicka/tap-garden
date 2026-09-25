@@ -9,5 +9,4 @@ pub use merge::Merge;
 pub use mof_routing::MofRoutingModel;
 pub use routing_model::NonRoutedModel;
 pub use routing_model::RoutedModel;
-pub use routing_model::RoutingModel;
 pub use zone::Zone;
