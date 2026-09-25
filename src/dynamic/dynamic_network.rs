@@ -51,7 +51,7 @@ impl<RP, FD: FundamentalDiagram> DynamicNetwork<RP, FD> {
             network,
             routing_models,
             link_models,
-            num_nonrouted_models
+            num_nonrouted_models,
         }
     }
 }
