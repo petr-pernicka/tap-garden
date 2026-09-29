@@ -10,11 +10,11 @@ pub struct MofRoutingModel {
 impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
     fn mixture_inflows_outflows(
         &self,
-        mofs: &MixtureOutgoingFractions,
         mixture_sending_flows: &[MixtureFlow],
         receiving_flows: &[f64],
         tn: usize,
-        node_model: Box<dyn NodeModel>,
+        mofs: &MixtureOutgoingFractions,
+        node_model: &Box<dyn NodeModel>,
     ) -> (Vec<MixtureFlow>, Vec<MixtureFlow>) {
         // 1. Compute total turning fractions.
         let mut total_turning_fractions =

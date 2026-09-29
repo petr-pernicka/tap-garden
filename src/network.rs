@@ -11,15 +11,6 @@ pub struct Network {
     mirror_links: Vec<Option<Link>>,
 }
 
-pub type Node = usize;
-
-#[derive(Debug, Clone)]
-pub struct Link {
-    index: usize,
-    tail: Node,
-    head: Node,
-}
-
 impl Network {
     pub fn new(data: Vec<(u32, u32)>, zones: &[u32]) -> (Self, HashMap<u32, Node>) {
         debug_assert!(
@@ -126,6 +117,29 @@ impl Network {
 
     pub fn mirror_link(&self, node: Node) -> &Option<Link> {
         &self.mirror_links[node]
+    }
+}
+
+pub type Node = usize;
+
+#[derive(Debug, Clone)]
+pub struct Link {
+    index: usize,
+    tail: Node,
+    head: Node,
+}
+
+impl Link {
+    pub fn index(&self) -> usize {
+        self.index
+    }
+    
+    pub fn tail(&self) -> Node {
+        self.tail
+    }
+    
+    pub fn head(&self) -> Node {
+        self.head
     }
 }
 
