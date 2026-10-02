@@ -1,9 +1,5 @@
-use tap_garden::data::function::{Increasing, IntPiecewiseLinearFunction, Unconstrained};
-use tap_garden::dynamic::routing::MixtureFlow;
+use tap_garden::io;
 
 fn main() {
-    let mut a: IntPiecewiseLinearFunction<MixtureFlow, Increasing> = IntPiecewiseLinearFunction::new(5);
-    a.push_value(MixtureFlow::zero());
-    let b = MixtureFlow::new(1., vec![1], vec![1.]);
-    a.push_value(b);
+    let (network, odm, _, _, _) = io::load_dir("./data/SiouxFalls").unwrap();
 }

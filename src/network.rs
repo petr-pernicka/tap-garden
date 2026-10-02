@@ -28,7 +28,11 @@ impl Network {
             }
         };
 
-        for (from, to) in &data {
+        for zone in zones { // first add zones as they will be the first nodes
+            add(zone);
+        }
+        
+        for (from, to) in &data { // then add the rest of the nodes
             add(from);
             add(to);
         }

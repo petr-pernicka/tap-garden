@@ -21,3 +21,7 @@ inherits = "release"
 debug-assertions = true
 overflow-checks = true
 panic = "unwind"
+
+[dependencies]
+csv = "1.4"
+anyhow = "1.0"

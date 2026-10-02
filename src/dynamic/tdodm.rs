@@ -1,4 +1,5 @@
 use crate::data::matrix::Matrix;
+use crate::static_::ODM;
 
 pub struct TimeDependentODM {
     demand: Box<[f64]>,
@@ -40,12 +41,12 @@ impl TimeDependentODM {
         self.demand.iter_mut().for_each(|x| *x *= scale);
     }
 
-    pub fn from_static_uniform(odm: &Matrix<f64>, time_steps: usize) -> Self {
+    pub fn from_static_uniform(odm: &ODM, time_steps: usize) -> Self {
         let distribution = vec![1. / time_steps as f64; time_steps];
         Self::from_static(odm, &distribution)
     }
 
-    pub fn from_static_gaussian(odm: &Matrix<f64>, time_steps: usize) -> Self {
+    pub fn from_static_gaussian(odm: &ODM, time_steps: usize) -> Self {
         let mut distribution = vec![0.; time_steps];
         let std = time_steps as f64 / 6.;
         let mean = (time_steps - 1) as f64 / 2.;
@@ -62,7 +63,7 @@ impl TimeDependentODM {
         Self::from_static(odm, &distribution)
     }
 
-    pub fn from_static(odm: &Matrix<f64>, distribution: &[f64]) -> Self {
+    pub fn from_static(odm: &ODM, distribution: &[f64]) -> Self {
         debug_assert_eq!(odm.rows(), odm.cols());
         debug_assert!(odm.data().iter().all(|x| *x >= 0.));
         debug_assert!(distribution.iter().all(|x| *x >= 0.));
