@@ -1,5 +1,8 @@
 use tap_garden::io;
+use anyhow::Result;
 
-fn main() {
-    let (network, odm, _, _, _) = io::load_dir("./data/SiouxFalls").unwrap();
+fn main() -> Result<()> {
+    let (_, _, _, _, _) = io::load_dir("./data/SiouxFalls")?;
+
+    Ok(())
 }

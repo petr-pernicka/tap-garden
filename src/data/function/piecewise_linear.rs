@@ -24,7 +24,7 @@ where
         }
     }
 
-    pub fn curr_max_x(&self) -> usize {
+    pub fn num_points(&self) -> usize {
         self.data.len()
     }
 

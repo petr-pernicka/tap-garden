@@ -15,9 +15,9 @@ impl LinkModel<TrapezoidalFd> for Ltm {
         cinflow: &Cvn,
         coutflow: &Cvn,
     ) -> (f64, Option<f64>) {
-        debug_assert!(cinflow.curr_max_x() == coutflow.curr_max_x());
+        debug_assert!(cinflow.num_points() == coutflow.num_points());
         debug_assert!(step_size > 0.);
-        debug_assert!(tn < cinflow.curr_max_x());
+        debug_assert!(tn < cinflow.num_points());
 
         let t0 = ((tn + 1) as f64 - fd.length() / (fd.free_flow_speed() * step_size)).max(0.0);
 
@@ -39,9 +39,9 @@ impl LinkModel<TrapezoidalFd> for Ltm {
         cinflow: &Cvn,
         coutflow: &Cvn,
     ) -> (f64, Option<f64>) {
-        debug_assert!(cinflow.curr_max_x() == coutflow.curr_max_x());
+        debug_assert!(cinflow.num_points() == coutflow.num_points());
         debug_assert!(step_size > 0.);
-        debug_assert!(tn < cinflow.curr_max_x());
+        debug_assert!(tn < cinflow.num_points());
 
         let t0 = ((tn + 1) as f64 - fd.length() / (fd.backward_wave_speed() * step_size)).max(0.0);
 
@@ -66,9 +66,9 @@ impl LinkModel<PiecewiseLinearFd> for Ltm {
         cinflow: &Cvn,
         coutflow: &Cvn,
     ) -> (f64, Option<f64>) {
-        debug_assert!(cinflow.curr_max_x() == coutflow.curr_max_x());
+        debug_assert!(cinflow.num_points() == coutflow.num_points());
         debug_assert!(step_size > 0.);
-        debug_assert!(tn < cinflow.curr_max_x());
+        debug_assert!(tn < cinflow.num_points());
 
         let mut min_coutflow_tn_plus_1 = f64::INFINITY;
         let mut min_t0 = -1.0;
@@ -117,9 +117,9 @@ impl LinkModel<PiecewiseLinearFd> for Ltm {
         cinflow: &Cvn,
         coutflow: &Cvn,
     ) -> (f64, Option<f64>) {
-        debug_assert!(cinflow.curr_max_x() == coutflow.curr_max_x());
+        debug_assert!(cinflow.num_points() == coutflow.num_points());
         debug_assert!(step_size > 0.);
-        debug_assert!(tn < cinflow.curr_max_x());
+        debug_assert!(tn < cinflow.num_points());
 
         let mut min_cinflow_tn_plus_1 = f64::INFINITY;
         let mut min_t0 = -1.0;

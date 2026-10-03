@@ -33,19 +33,9 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
         }
 
         for tn in 0..time_steps {
-            debug_assert!(
-                cvns.iter()
-                    .all(|(cinflow, _)| cinflow.curr_max_x() == tn + 1)
-            );
-            debug_assert!(
-                cvns.iter()
-                    .all(|(_, coutflow)| coutflow.curr_max_x() == tn + 1)
-            );
-            debug_assert!(
-                mixture_inflows_per_link
-                    .iter()
-                    .all(|mi| mi.curr_max_x() == tn)
-            );
+            debug_assert!(cvns.iter().all(|(cinflow, _)| cinflow.num_points() == tn + 1));
+            debug_assert!(cvns.iter().all(|(_, coutflow)| coutflow.num_points() == tn + 1));
+            debug_assert!(mixture_inflows_per_link.iter().all(|mi| mi.num_points() == tn));
 
             for node in network.nodes() {
                 let mixture_sending_flows = network
@@ -55,9 +45,7 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                         let i = link.index();
                         let model = &network.link_models()[i];
                         let fd = &network.fundamental_diagrams()[i];
-                        let sending_flow = model
-                            .sending_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1)
-                            .0;
+                        let sending_flow = model.sending_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1).0;
                         outgoing_mixture_flow(
                             tn,
                             sending_flow,
@@ -75,9 +63,7 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                     .map(|i| {
                         let model = &network.link_models()[i];
                         let fd = &network.fundamental_diagrams()[i];
-                        model
-                            .receiving_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1)
-                            .0
+                        model.receiving_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1).0
                     })
                     .collect::<Vec<_>>();
 
