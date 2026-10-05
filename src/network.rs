@@ -1,6 +1,22 @@
 use std::collections::{HashMap, HashSet};
 use std::ops::Range;
 
+/// Both `NodeIndex` and [NodeID] are unique representations/identifiers of nodes in a
+/// network. While the only assumption for `NodeID` are that it is an unsinged integer,
+/// `NodeIndex` has more assumptions tied with it:
+/// - For a [Network] with number of nodes *N*, values of `NodeIndex` span the range
+///   given by [Network::nodes()] (i.e. from 0 to *N*).
+/// - For a [Network] with number of zones *Z*, the zones are the first *Z* nodes (i.e.
+///   values of `NodeIndex` from 0 to *Z*, given by [Network::zones()]).
+///
+/// `NodeID` is the 'outer' representation used e.g. by methods which load the data.
+/// `NodeIndex` is the 'inner' representation which allows direct addressing for more
+/// performance.
+pub type NodeIndex = usize;
+
+/// See documentation for [NodeIndex].
+pub type NodeID = usize;
+
 pub struct Network {
     nodes: usize,
     zones: usize,
@@ -12,67 +28,125 @@ pub struct Network {
 }
 
 impl Network {
-    pub fn new(data: Vec<(u32, u32)>, zones: &[u32]) -> (Self, HashMap<u32, Node>) {
+    /// Creates new network from link data and zones. The first argument is a slice of
+    /// pairs of [NodeID], each pair represents a single link in the network. The second
+    /// argument is a slice of [NodeID] and it contains those nodes which are zones.
+    ///
+    /// The node representation by IDs is converted to representation using indices, see
+    /// the documentation of [NodeIndex] for more details.
+    pub fn new(
+        link_data: &[(NodeID, NodeID)],
+        zones: &[NodeID],
+    ) -> (Network, HashMap<NodeID, NodeIndex>) {
         debug_assert!(
-            data.iter().collect::<HashSet<_>>().len() == data.len(),
+            link_data.iter().collect::<HashSet<_>>().len() == link_data.len(),
             "The data contain duplicate links!"
         );
 
         // Create vector of nodes
         let mut id_to_index = HashMap::new();
         let mut node_index = 0;
-        let mut add = |n: &u32| {
+        let mut add = |n: &NodeID| {
             if !id_to_index.contains_key(n) {
                 id_to_index.insert(*n, node_index);
                 node_index += 1;
             }
         };
 
-        for zone in zones { // first add zones as they will be the first nodes
+        for zone in zones {
+            // first add zones as they will be the first nodes
             add(zone);
         }
-        
-        for (from, to) in &data { // then add the rest of the nodes
+
+        for (from, to) in link_data {
+            // then add the rest of the nodes
             add(from);
             add(to);
         }
 
-        // Create vectors of links and indices
-        let mut outgoing_links = Vec::with_capacity(data.len());
-        for (from, to) in &data {
-            outgoing_links.push(Link {
-                index: 0,
-                tail: id_to_index[from],
-                head: id_to_index[to],
-            });
+        let links = link_data
+            .iter()
+            .map(|(from, to)| (id_to_index[from], id_to_index[to]))
+            .collect();
+
+        (Network::build(node_index, zones.len(), links), id_to_index)
+    }
+
+    pub fn expand(
+        self,
+        id2index: Option<HashMap<NodeID, NodeIndex>>,
+    ) -> (Network, Option<HashMap<NodeID, NodeIndex>>) {
+        let z = self.zones;
+
+        // Former zones (and every other node) move up by z
+        // indices 0..z are now free for the new zones.
+        let id2index = id2index.map(|mut map| {
+            for index in map.values_mut() {
+                *index += z;
+            }
+            map
+        });
+
+        let mut links = Vec::with_capacity(self.outgoing_links.len() + 2 * z);
+
+        // New zone <-> former zone connections
+        for zone in 0..z {
+            links.push((zone, zone + z));
+            links.push((zone + z, zone));
         }
+
+        // Existing links, shifted to the new node indices
+        links.extend(self.outgoing_links.iter().map(|l| (l.tail + z, l.head + z)));
+
+        (Network::build(self.nodes + z, z, links), id2index)
+    }
+
+    pub fn reorder_nodes(
+        self,
+        new_indices: HashMap<NodeIndex, NodeIndex>,
+        id2index: Option<HashMap<NodeID, NodeIndex>>,
+    ) -> (Network, Option<HashMap<NodeID, NodeIndex>>) {
+
+        let id2index = id2index.map(|mut map| {
+            for index in map.values_mut() {
+                *index = new_indices[index];
+            }
+            map
+        });
+
+        let links = self
+            .outgoing_links
+            .iter()
+            .map(|link| (new_indices[&link.tail], new_indices[&link.head]))
+            .collect();
+
+        (Network::build(self.nodes, self.zones, links), id2index)
+    }
+
+    fn build(nodes: usize, zones: usize, links: Vec<(NodeIndex, NodeIndex)>) -> Network {
+        let mut outgoing_links: Vec<Link> = links
+            .into_iter()
+            .map(|(tail, head)| Link {
+                index: 0,
+                tail,
+                head,
+            })
+            .collect();
         outgoing_links.sort_unstable_by_key(|link| link.tail);
 
         // Set the indices of links
-        for (i, outgoing_link) in outgoing_links.iter_mut().enumerate() {
-            outgoing_link.index = i;
+        for (i, link) in outgoing_links.iter_mut().enumerate() {
+            link.index = i;
         }
 
-        let mut outgoing_indices = vec![0; node_index + 1];
-        for link in &outgoing_links {
-            outgoing_indices[link.tail + 1] += 1;
-        }
-        for i in 1..=node_index {
-            outgoing_indices[i] += outgoing_indices[i - 1];
-        }
+        let outgoing_indices = Self::offsets(nodes, outgoing_links.iter().map(|l| l.tail));
 
         let mut incoming_links = outgoing_links.clone();
         incoming_links.sort_unstable_by_key(|link| link.head);
 
-        let mut incoming_indices = vec![0; node_index + 1];
-        for link in &outgoing_links {
-            incoming_indices[link.head + 1] += 1;
-        }
-        for i in 1..=node_index {
-            incoming_indices[i] += incoming_indices[i - 1];
-        }
+        let incoming_indices = Self::offsets(nodes, outgoing_links.iter().map(|l| l.head));
 
-        let mut mirror_links = vec![None; data.len()];
+        let mut mirror_links = vec![None; outgoing_links.len()];
         for link in &outgoing_links {
             let range = incoming_indices[link.tail]..incoming_indices[link.tail + 1];
             if let Some(reverse) = incoming_links[range]
@@ -83,25 +157,33 @@ impl Network {
             }
         }
 
-        (
-            Network {
-                nodes: node_index,
-                zones: zones.len(),
-                outgoing_indices,
-                outgoing_links,
-                incoming_indices,
-                incoming_links,
-                mirror_links,
-            },
-            id_to_index,
-        )
+        Network {
+            nodes,
+            zones,
+            outgoing_indices,
+            outgoing_links,
+            incoming_indices,
+            incoming_links,
+            mirror_links,
+        }
     }
 
-    pub fn nodes(&self) -> Range<Node> {
+    fn offsets(nodes: usize, keys: impl Iterator<Item = NodeIndex>) -> Vec<usize> {
+        let mut offsets = vec![0; nodes + 1];
+        for key in keys {
+            offsets[key + 1] += 1;
+        }
+        for i in 1..=nodes {
+            offsets[i] += offsets[i - 1];
+        }
+        offsets
+    }
+
+    pub fn nodes(&self) -> Range<NodeIndex> {
         0..self.nodes
     }
-    
-    pub fn zones(&self) -> Range<Node> {
+
+    pub fn zones(&self) -> Range<NodeIndex> {
         0..self.zones
     }
 
@@ -109,40 +191,38 @@ impl Network {
         &self.outgoing_links[..]
     }
 
-    pub fn outgoing_links(&self, node: Node) -> &[Link] {
+    pub fn outgoing_links(&self, node: NodeIndex) -> &[Link] {
         let range = self.outgoing_indices[node]..self.outgoing_indices[node + 1];
         &self.outgoing_links[range]
     }
 
-    pub fn incoming_links(&self, node: Node) -> &[Link] {
+    pub fn incoming_links(&self, node: NodeIndex) -> &[Link] {
         let range = self.incoming_indices[node]..self.incoming_indices[node + 1];
         &self.incoming_links[range]
     }
 
-    pub fn mirror_link(&self, node: Node) -> &Option<Link> {
-        &self.mirror_links[node]
+    pub fn mirror_link(&self, link_index: usize) -> &Option<Link> {
+        &self.mirror_links[link_index]
     }
 }
-
-pub type Node = usize;
 
 #[derive(Debug, Clone)]
 pub struct Link {
     index: usize,
-    tail: Node,
-    head: Node,
+    tail: NodeIndex,
+    head: NodeIndex,
 }
 
 impl Link {
     pub fn index(&self) -> usize {
         self.index
     }
-    
-    pub fn tail(&self) -> Node {
+
+    pub fn tail(&self) -> NodeIndex {
         self.tail
     }
-    
-    pub fn head(&self) -> Node {
+
+    pub fn head(&self) -> NodeIndex {
         self.head
     }
 }
@@ -155,7 +235,7 @@ mod tests {
     fn test_new() {
         let data = vec![(2, 1), (2, 3), (2, 4), (4, 3), (4, 2)];
 
-        let (network, id_to_index) = Network::new(data, &[]);
+        let (network, id_to_index) = Network::new(&data, &[]);
 
         assert_eq!(network.nodes, 4);
         assert_eq!(network.outgoing_indices.len(), 5);
@@ -188,6 +268,6 @@ mod tests {
     fn test_new_bad() {
         let data = vec![(2, 1), (2, 3), (2, 4), (4, 3), (4, 2), (2, 1)];
 
-        let _ = Network::new(data, &[]);
+        let _ = Network::new(&data, &[]);
     }
 }
