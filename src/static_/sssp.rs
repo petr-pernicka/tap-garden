@@ -25,7 +25,11 @@ impl<'a> SSSP<'a> {
 
         while let Some(Reverse(key)) = priority_queue.pop() {
             let tail = (key & 0xFFFF_FFFF_FFFF_FFFF) as usize;
-            let tail_distance = distance[tail]; // TODO stale entries f64::from_bits((key >> 64) as u64)
+            let tail_distance = f64::from_bits((key >> 64) as u64);
+
+            if tail_distance > distance[tail] {
+                continue;
+            }
 
             for outgoing_link in self.network.outgoing_links(tail) {
                 let head = outgoing_link.head();
