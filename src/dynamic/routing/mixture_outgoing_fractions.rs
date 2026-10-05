@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 use std::rc::Rc;
 
 pub struct MixtureOutgoingFractions {
-    shared_data: Rc<RefCell<SharedData>>,
+    shared_data: Rc<RefCell<SharedData>>, // TODO does it need RefCell if it is not mutated?
     mof_intersections: Vec<MofIntersection>,
 }
 

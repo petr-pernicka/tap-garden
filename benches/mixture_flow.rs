@@ -60,5 +60,10 @@ fn mixture_flow_plus(c: &mut Criterion) {
     group.finish();
 }
 
-criterion_group!(benches, mixture_flow_plus);
-criterion_main!(benches);
+criterion_group!(
+    name = mixture_flow;
+    config = Criterion::default();
+    targets = mixture_flow_plus
+);
+
+criterion_main!(mixture_flow);

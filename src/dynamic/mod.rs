@@ -3,6 +3,7 @@ pub mod loading;
 pub mod routing;
 mod tdodm;
 mod dynamic_network;
+pub mod equilibrium;
 
 use crate::data::function::{Increasing, IntPiecewiseLinearFunction};
 pub use tdodm::TimeDependentODM;
