@@ -4,26 +4,30 @@ use std::collections::BinaryHeap;
 
 pub struct SSSP<'a> {
     network: &'a Network,
+    priority_queue: BinaryHeap<Reverse<u128>>,
 }
 
 impl<'a> SSSP<'a> {
     pub fn new(network: &'a Network) -> Self {
-        Self { network }
+        Self {
+            network,
+            priority_queue: BinaryHeap::with_capacity(network.links().len() + 1)
+        }
     }
 
-    pub fn one_to_all(&self, origin: NodeIndex, link_costs: &[f64]) -> (Vec<f64>, Vec<usize>) {
+    pub fn one_to_all(&mut self, origin: NodeIndex, link_costs: &[f64]) -> (Vec<f64>, Vec<usize>) {
         debug_assert_eq!(link_costs.len(), self.network.links().len());
+        self.priority_queue.clear();
 
         let mut distance = vec![f64::INFINITY; self.network.nodes().len()];
         distance[origin] = 0.0;
 
         let mut predecessor_tree = vec![0; self.network.nodes().len()];
-        let mut priority_queue = BinaryHeap::with_capacity(self.network.links().len() + 1);
 
         let key = (0f64.to_bits() as u128) << 64 | origin as u128;
-        priority_queue.push(Reverse(key));
+        self.priority_queue.push(Reverse(key));
 
-        while let Some(Reverse(key)) = priority_queue.pop() {
+        while let Some(Reverse(key)) = self.priority_queue.pop() {
             let tail = (key & 0xFFFF_FFFF_FFFF_FFFF) as usize;
             let tail_distance = f64::from_bits((key >> 64) as u64);
 
@@ -42,11 +46,12 @@ impl<'a> SSSP<'a> {
                     distance[head] = new_head_distance;
 
                     let key = (new_head_distance.to_bits() as u128) << 64 | head as u128;
-                    priority_queue.push(Reverse(key));
+                    self.priority_queue.push(Reverse(key));
                 }
             }
         }
 
+        
         (distance, predecessor_tree)
     }
 }

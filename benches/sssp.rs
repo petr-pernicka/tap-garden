@@ -18,7 +18,7 @@ fn one_to_all(c: &mut Criterion) {
             .step_by((network.zones().len() / 50).max(1))
             .collect::<Vec<_>>();
 
-        let sssp = SSSP::new(&network);
+        let mut sssp = SSSP::new(&network);
         group.bench_function(
             format!("Network {dir} (# of origins: {})", origins.len()),
             |bencher| {
