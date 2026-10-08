@@ -41,9 +41,9 @@ impl MixtureOutgoingFractions {
             mof_intersections,
         }
     }
-
-    pub fn start(&mut self) {
-        self.shared_data.borrow_mut().temporary_grid.fill(0.);
+    
+    pub fn compress_for_node(&mut self, node: usize) {
+        self.mof_intersections[node].compress()
     }
 
     pub fn set_fraction(&mut self, n: usize, tn: usize, d: usize, j: usize, value: f64) {
@@ -196,6 +196,8 @@ impl MofIntersection {
                 }
             }
         }
+
+        self.shared_data.borrow_mut().temporary_grid.fill(0.);
     }
 
     fn is_singleton(vector: &[f64]) -> isize {
