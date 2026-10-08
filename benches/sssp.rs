@@ -8,11 +8,24 @@ fn one_to_all(c: &mut Criterion) {
     let mut group = c.benchmark_group("SSSP::one_to_all");
 
     for dir in ["./data/SiouxFalls", "./data/ChicagoSketch", "./data/Sydney"] {
-        let (network, _, _, _, link_data) = io::load_dir(dir).unwrap();
-        let link_costs = link_data
-            .iter()
-            .map(|data| data["vdf_fftt"].parse::<f64>().unwrap())
-            .collect::<Vec<_>>();
+        let (node_data, link_data, demand_data) =
+            io::gmns::load_gmns_dir(dir).unwrap();
+        let (network, _odm, id2index) =
+            io::parse::from_gmns_data(&node_data, &link_data, &demand_data);
+
+        let mut link_costs = vec![0.0; link_data.len()];
+        for ld in link_data {
+            let i = network
+                .links()
+                .iter()
+                .position(|link| {
+                    link.tail() == id2index[&ld.from_node_id]
+                        && link.head() == id2index[&ld.to_node_id]
+                })
+                .unwrap();
+
+            link_costs[i] = ld.vdf_fftt;
+        }
 
         let origins = (0..network.zones().len())
             .step_by((network.zones().len() / 50).max(1))

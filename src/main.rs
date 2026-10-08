@@ -2,8 +2,8 @@ use tap_garden::io;
 use anyhow::Result;
 
 fn main() -> Result<()> {
-    let (network, odm, _, _, _) = io::load_dir("./data/SiouxFalls")?;
-    let network = network.expand(None);
+    let (node_data, link_data, demand_data) = io::gmns::load_gmns_dir("./data/SiouxFalls")?;
+    let (_network, _odm, _id2index) = io::parse::from_gmns_data(&node_data, &link_data, &demand_data);
 
     Ok(())
 }
