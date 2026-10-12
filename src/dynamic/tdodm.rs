@@ -1,4 +1,3 @@
-use crate::data::matrix::Matrix;
 use crate::static_::ODM;
 
 pub struct TimeDependentODM {
@@ -188,7 +187,7 @@ mod tests {
 
     #[test]
     fn test_from_static_uniform() {
-        let mut matrix = Matrix::new(2, 2, 0.);
+        let mut matrix = ODM::new(2, 2, 0.);
         matrix[(0, 0)] = 1.;
         matrix[(1, 1)] = 4.;
 
@@ -204,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_from_static_gaussian() {
-        let mut matrix = Matrix::new(2, 2, 0.);
+        let mut matrix = ODM::new(2, 2, 0.);
         matrix[(0, 0)] = 42.;
 
         let tdodm = TimeDependentODM::from_static_gaussian(&matrix, 4);
@@ -225,7 +224,7 @@ mod tests {
 
     #[test]
     fn test_from_static() {
-        let mut matrix = Matrix::new(2, 2, 0.);
+        let mut matrix = ODM::new(2, 2, 0.);
         matrix[(0, 0)] = 42.;
 
         let distribution = [0.1, 0.2, 0.3, 0.4];
@@ -243,7 +242,7 @@ mod tests {
     #[cfg(debug_assertions)]
     #[should_panic]
     fn test_from_static_bad1() {
-        let mut matrix = Matrix::new(3, 2, 0.);
+        let mut matrix = ODM::new(3, 2, 0.);
         matrix[(0, 0)] = 42.;
 
         let distribution = [0.1, 0.2, 0.3, 0.4];
@@ -254,7 +253,7 @@ mod tests {
     #[cfg(debug_assertions)]
     #[should_panic]
     fn test_from_static_bad2() {
-        let mut matrix = Matrix::new(2, 2, 0.);
+        let mut matrix = ODM::new(2, 2, 0.);
         matrix[(0, 0)] = -42.;
 
         let distribution = [0.1, 0.2, 0.3, 0.4];
@@ -265,7 +264,7 @@ mod tests {
     #[cfg(debug_assertions)]
     #[should_panic]
     fn test_from_static_bad3() {
-        let mut matrix = Matrix::new(2, 2, 0.);
+        let mut matrix = ODM::new(2, 2, 0.);
         matrix[(0, 0)] = 42.;
 
         let distribution = [-0.1, 0.2, 0.3, 0.4];
@@ -276,7 +275,7 @@ mod tests {
     #[cfg(debug_assertions)]
     #[should_panic]
     fn test_from_static_bad4() {
-        let mut matrix = Matrix::new(2, 2, 0.);
+        let mut matrix = ODM::new(2, 2, 0.);
         matrix[(0, 0)] = 42.;
 
         let distribution = [0.3, 0.2, 0.3, 0.4];

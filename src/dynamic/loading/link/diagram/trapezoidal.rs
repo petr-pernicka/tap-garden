@@ -1,5 +1,6 @@
 use crate::dynamic::loading::link::diagram::fd::FundamentalDiagram;
 
+#[derive(Clone)]
 pub struct TrapezoidalFd {
     length: f64,
     capacity: f64,
@@ -53,7 +54,7 @@ impl TrapezoidalFd {
         }
     }
 
-    pub fn new_triangular(length: f64, params: OmitParam) -> Self {
+    pub fn triangular(length: f64, params: OmitParam) -> Self {
         match params {
             OmitParam::JamDensity {
                 capacity,

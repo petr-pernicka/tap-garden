@@ -21,3 +21,4 @@ mod trapezoidal;
 pub use fd::FundamentalDiagram;
 pub use piecewise_linear::PiecewiseLinearFd;
 pub use trapezoidal::TrapezoidalFd;
+pub use trapezoidal::OmitParam;
