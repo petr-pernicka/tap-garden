@@ -13,7 +13,7 @@ impl<FD: FundamentalDiagram> LinkModel<FD> for Connector {
         cinflow: &Cvn,
         coutflow: &Cvn,
     ) -> (f64, Option<f64>) {
-        (cinflow[tn] - coutflow[tn], None)
+        ((cinflow[tn] - coutflow[tn]).max(0.0), None)
     }
 
     fn receiving_flow(

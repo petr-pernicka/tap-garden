@@ -33,9 +33,19 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
         }
 
         for tn in 0..time_steps {
-            debug_assert!(cvns.iter().all(|(cinflow, _)| cinflow.num_points() == tn + 1));
-            debug_assert!(cvns.iter().all(|(_, coutflow)| coutflow.num_points() == tn + 1));
-            debug_assert!(mixture_inflows_per_link.iter().all(|mi| mi.num_points() == tn));
+            debug_assert!(
+                cvns.iter()
+                    .all(|(cinflow, _)| cinflow.num_points() == tn + 1)
+            );
+            debug_assert!(
+                cvns.iter()
+                    .all(|(_, coutflow)| coutflow.num_points() == tn + 1)
+            );
+            debug_assert!(
+                mixture_inflows_per_link
+                    .iter()
+                    .all(|mi| mi.num_points() == tn)
+            );
 
             for node in network.nodes() {
                 let mixture_sending_flows = network
@@ -45,7 +55,10 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                         let i = link.index();
                         let model = &network.link_models()[i];
                         let fd = &network.fundamental_diagrams()[i];
-                        let sending_flow = model.sending_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1).0;
+                        let sending_flow = model
+                            .sending_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1)
+                            .0;
+
                         outgoing_mixture_flow(
                             tn,
                             sending_flow,
@@ -55,7 +68,7 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                         )
                     })
                     .collect::<Vec<_>>();
-
+                
                 let receiving_flows = network
                     .outgoing_links(node)
                     .iter()
@@ -63,7 +76,9 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                     .map(|i| {
                         let model = &network.link_models()[i];
                         let fd = &network.fundamental_diagrams()[i];
-                        model.receiving_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1).0
+                        model
+                            .receiving_flow(tn, step_size, fd, &cvns[i].0, &cvns[i].1)
+                            .0
                     })
                     .collect::<Vec<_>>();
 
@@ -88,7 +103,7 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                     .enumerate()
                     .for_each(|(i, mixture_inflow)| {
                         let i = network.incoming_links(node)[i].index();
-                        
+
                         // The inflow of this node is outflow for the incoming link
                         let new_value = cvns[i].1[tn] + mixture_inflow.total_flow();
                         cvns[i].1.push_value(new_value);
@@ -99,13 +114,21 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                     .enumerate()
                     .for_each(|(i, mixture_outflow)| {
                         let i = network.outgoing_links(node)[i].index();
-                        
+
                         // The outflow of this node is inflow for the outgoing link
                         let new_value = cvns[i].0[tn] + mixture_outflow.total_flow();
                         cvns[i].0.push_value(new_value);
                         mixture_inflows_per_link[i].push_value(mixture_outflow);
                     });
             }
+
+            println!(
+                "[Time {}] Total flow on network: {}",
+                tn,
+                cvns.iter()
+                    .map(|(cinflow, coutflow)| cinflow[tn + 1] - coutflow[tn + 1])
+                    .sum::<f64>()
+            )
         }
 
         cvns

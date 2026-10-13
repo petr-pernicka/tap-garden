@@ -1,7 +1,7 @@
 use std::ops::{AddAssign, Index, IndexMut, Mul};
 
 pub struct Matrix<T> {
-    data: Box<[T]>,
+    data: Vec<T>,
     rows: usize,
     cols: usize,
 }
@@ -38,7 +38,7 @@ impl<T: Mul<Output = T> + Copy> Matrix<T> {
         }
 
         Self {
-            data: result.into_boxed_slice(),
+            data: result,
             rows: self.rows,
             cols: self.cols,
         }
@@ -62,7 +62,7 @@ impl<T: AddAssign + Copy> Matrix<T> {
 impl<T: Copy> Matrix<T> {
     pub fn new(rows: usize, cols: usize, initial_val: T) -> Matrix<T> {
         Self {
-            data: vec![initial_val; rows * cols].into_boxed_slice(),
+            data: vec![initial_val; rows * cols],
             rows,
             cols,
         }

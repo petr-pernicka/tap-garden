@@ -57,8 +57,8 @@ pub fn outgoing_mixture_flow(
         }
     }
 
-    debug_assert_eq!(result.total_flow(), flow);
-    MixtureFlow::zero()
+    debug_assert!((result.total_flow() - flow).abs() < 1e-10);
+    result
 }
 
 fn time_of_entering(outflow: f64, cinflow: &Cvn, start: usize) -> f64 {

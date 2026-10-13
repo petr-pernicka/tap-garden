@@ -25,7 +25,7 @@ impl NodeModel for TampereUnsignalized {
             turning_fractions
                 .data()
                 .iter()
-                .all(|x| (0.0..=1.).contains(x))
+                .all(|x| (0.0..=1. + 1e-10).contains(x))
         );
         debug_assert_eq!(sending_flows.len(), turning_fractions.rows());
         debug_assert_eq!(sending_flows.len(), self.priorities.len());
@@ -80,14 +80,13 @@ impl NodeModel for TampereUnsignalized {
 
                 lor[jk] = R[jk] / denominator;
 
-                if lor[jk] < min_lor {
+                if lor[jk] <= min_lor {
                     min_lor = lor[jk];
                     min_lor_jk = Some(jk);
                 }
             }
 
             debug_assert!(min_lor_jk.is_some());
-            debug_assert_ne!(f64::INFINITY, min_lor);
             let min_lor_jk = min_lor_jk.unwrap();
 
             // 4. Determine flows of corresponding set U[min_lor_jk] and recalculate R_jk.
@@ -151,6 +150,7 @@ impl NodeModel for TampereUnsignalized {
             }
         }
 
+        assert!((inflows.iter().sum::<f64>() - outflows.iter().sum::<f64>()).abs() < 1e-10);
         (inflows, outflows)
     }
 }

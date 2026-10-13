@@ -91,14 +91,14 @@ struct MofIntersection {
 
 impl MofIntersection {
     fn get_fraction(&self, tn: usize, d: usize, j: usize) -> f64 {
-        let mut index = -1;
-        for i in (self.offsets[d]..=self.offsets[d + 1]).rev() {
-            if self.indices[i] <= tn {
-                index = self.values[i];
-                break;
-            }
+        let mut i = self.offsets[d];
+        let last = self.offsets[d + 1] - 1;
+        
+        while i < last && self.indices[i + 1] <= tn {
+            i += 1;
         }
 
+        let index = self.values[i];
         if index >= 0 {
             // vector[n, tn, d] is a singleton
             if index as usize == j { 1. } else { 0. }
