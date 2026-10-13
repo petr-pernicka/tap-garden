@@ -98,7 +98,7 @@ impl<'a> SSSP<'a> {
                     self.tree[tail] = incoming_link.index();
                     self.distance[tail] = new_tail_distance;
 
-                    let key = (new_tail_distance.to_bits() as u128) << 64 | head as u128;
+                    let key = (new_tail_distance.to_bits() as u128) << 64 | tail as u128;
                     self.priority_queue.push(Reverse(key));
                 }
             }

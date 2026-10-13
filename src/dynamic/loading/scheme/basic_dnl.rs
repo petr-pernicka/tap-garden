@@ -5,7 +5,7 @@ use crate::dynamic::loading::outgoing_mixture_flow;
 use crate::dynamic::loading::scheme::DnlScheme;
 use crate::dynamic::{Cvn, DynamicNetwork};
 
-pub struct BasicDnl {}
+pub struct BasicDnl;
 
 impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
     fn run(
@@ -67,15 +67,14 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                     })
                     .collect::<Vec<_>>();
 
-                let routing_model = &network.routing_models()[node];
-                let node_model = &network.node_models()[node];
+                let (routing_model, node_model) = network.routing_model(node);
                 let (mixture_inflows, mixture_outflows) = match routing_model {
                     RoutingModel::Routed(routed_model) => routed_model.mixture_inflows_outflows(
                         &mixture_sending_flows,
                         &receiving_flows,
                         tn,
                         routing_parameters,
-                        node_model,
+                        node_model.unwrap(),
                     ),
                     RoutingModel::NonRouted(nonrouted_model) => nonrouted_model
                         .mixture_inflows_outflows(&mixture_sending_flows, &receiving_flows, tn),

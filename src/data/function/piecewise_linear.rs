@@ -40,12 +40,12 @@ where
 
     pub fn value_interpolate(&self, x: f64) -> (Y, f64) {
         debug_assert!(x >= 0.);
-        debug_assert!((x.trunc() as usize + 1) < self.data.len());
+        debug_assert!((x.ceil() as usize) < self.data.len());
 
         let a = x.trunc();
         let p = x - a;
         let a = a as usize;
-        let b = a + 1;
+        let b = x.ceil() as usize;
 
         (self.data[a].linp(&self.data[b], p), p)
     }

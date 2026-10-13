@@ -27,9 +27,9 @@ pub fn outgoing_mixture_flow(
     let outflow2 = coutflow[tn] + flow;
 
     // The time at which outflow2 entered the link: cumulativeInflow[t2] == outflow2
-    let t1 = time_of_entering(outflow2, &cinflow, tn);
+    let t2 = time_of_entering(outflow2, &cinflow, tn);
     // The time at which outflow1 entered the link: cumulativeInflow[t1] == outflow1
-    let t2 = time_of_entering(outflow1, &cinflow, t1 as usize);
+    let t1 = time_of_entering(outflow1, &cinflow, t2 as usize);
 
     // It is guaranteed that t1 < t2 and t1 == t2 only if flow == 0 (and that is handled above)
     debug_assert!(t1 < t2);

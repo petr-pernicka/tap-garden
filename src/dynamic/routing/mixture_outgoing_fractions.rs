@@ -110,11 +110,11 @@ impl MofIntersection {
     }
 
     fn compress(&mut self) {
-        let SharedData {
-            destinations,
-            time_steps,
-            temporary_grid,
-        } = &*self.shared_data.borrow();
+        let &mut SharedData {
+            ref destinations,
+            ref time_steps,
+            ref mut temporary_grid,
+        } = &mut *self.shared_data.borrow_mut();
 
         // 1. Create the index grid and pool of unique vectors.
         let mut index_grid = vec![0isize; destinations * time_steps];
@@ -197,7 +197,7 @@ impl MofIntersection {
             }
         }
 
-        self.shared_data.borrow_mut().temporary_grid.fill(0.);
+        temporary_grid.fill(0.);
     }
 
     fn is_singleton(vector: &[f64]) -> isize {

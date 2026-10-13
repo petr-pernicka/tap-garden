@@ -4,7 +4,13 @@ use crate::dynamic::loading::node::routing::routing_model::RoutedModel;
 use crate::dynamic::routing::{MixtureFlow, MixtureOutgoingFractions};
 
 pub struct MofRoutingModel {
-    node_index: usize,
+    index: usize,
+}
+
+impl MofRoutingModel {
+    pub fn new(index: usize) -> Self {
+        Self { index }
+    }
 }
 
 impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
@@ -27,7 +33,7 @@ impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
 
                 for jk in 0..receiving_flows.len() {
                     total_turning_fractions[(ij, jk)] +=
-                        portion * mofs.get_fraction(self.node_index, tn, destination as usize, jk);
+                        portion * mofs.get_fraction(self.index, tn, destination as usize, jk);
                 }
             }
         }
@@ -56,6 +62,7 @@ impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
         for jk in 0..receiving_flows.len() {
             if total_outflows[jk] <= 0. {
                 mixture_outflows.push(MixtureFlow::zero());
+                continue;
             }
 
             let mut destinations = Vec::with_capacity(mofs.destinations());
@@ -79,7 +86,7 @@ impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
                     if mixture_inflows[ij].destination(counters[ij] as usize) as usize == d {
                         sum += mixture_inflows[ij].portion(counters[ij] as usize)
                             * mixture_inflows[ij].total_flow()
-                            * mofs.get_fraction(self.node_index, tn, d, jk);
+                            * mofs.get_fraction(self.index, tn, d, jk);
                         counters[ij] += 1;
                     }
 

@@ -1,9 +1,9 @@
 use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::loading::link::model::LinkModel;
+use crate::dynamic::loading::node::model::NodeModel;
 use crate::dynamic::loading::node::routing::{NonRoutedModel, RoutedModel, Zone};
 use crate::network::Network;
 use std::ops::Deref;
-use crate::dynamic::loading::node::model::NodeModel;
 
 pub struct DynamicNetwork<RP, FD: FundamentalDiagram> {
     network: Network,
@@ -71,13 +71,15 @@ impl<RP, FD: FundamentalDiagram> DynamicNetwork<RP, FD> {
     pub fn fundamental_diagrams(&self) -> &Vec<FD> {
         &self.fundamental_diagrams
     }
-    
-    pub fn routing_models(&self) -> &Vec<RoutingModel<RP>> {
-        &self.routing_models
-    }
-    
-    pub fn node_models(&self) -> &Vec<Box<dyn NodeModel>> {
-        &self.node_models
+
+    pub fn routing_model(&self, n: usize) -> (&RoutingModel<RP>, Option<&Box<dyn NodeModel>>) {
+        debug_assert!(n < self.network.nodes().len());
+        
+        if n >= self.num_nonrouted_models {
+            (&self.routing_models[n], Some(&self.node_models[n - self.num_nonrouted_models]))
+        } else {
+            (&self.routing_models[n], None)
+        }
     }
 }
 
