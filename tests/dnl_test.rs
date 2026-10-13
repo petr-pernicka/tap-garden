@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::rc::Rc;
+use std::time::Instant;
 use tap_garden::dynamic::equilibrium::AON;
 use tap_garden::dynamic::loading::link::diagram::*;
 use tap_garden::dynamic::loading::link::model::{Connector, LinkModel, Ltm};
@@ -11,8 +12,8 @@ use tap_garden::dynamic::{DynamicNetwork, TimeDependentODM};
 use tap_garden::io;
 
 #[test]
-fn aon_test() -> Result<()> {
-    let (node_data, link_data, demand_data) = io::gmns::load_gmns_dir("./data/SiouxFalls")?;
+fn dnl_test() -> Result<()> {
+    let (node_data, link_data, demand_data) = io::gmns::load_gmns_dir("./data/ChicagoSketch")?;
     let (network, odm, id2index) = io::parse::from_gmns_data(&node_data, &link_data, &demand_data);
     let (network, Some(id2index)) = network.expand(Some(id2index)) else {
         unreachable!()
@@ -66,7 +67,7 @@ fn aon_test() -> Result<()> {
         })
         .collect::<Vec<_>>();
 
-    let odm = Rc::new(TimeDependentODM::from_static_gaussian(&odm, 10));
+    let odm = Rc::new(TimeDependentODM::from_static_gaussian(&odm, 30));
 
     let zones = network
         .zones()
@@ -101,11 +102,21 @@ fn aon_test() -> Result<()> {
         fds,
     );
 
-    let time_steps = 35;
-    let step_size = 1.0;
-    let routing_params = AON::compute_routing_parameters(&network, &free_flow_times, time_steps);
+    let time_steps = 1000;
+    let step_size = 0.1;
     let dnl = BasicDnl;
+
+    println!("Running AON...");
+    let tick = Instant::now();
+    let routing_params = AON::compute_routing_parameters(&network, &free_flow_times, time_steps);
+    let tock = Instant::now();
+    println!("AON took {:.2}s", (tock - tick).as_secs_f64());
+
+    println!("Running DNL...");
+    let tick = Instant::now();
     let cumulative_flows = dnl.run(&network, time_steps, step_size, &routing_params);
+    let tock = Instant::now();
+    println!("DNL took {:.2}s", (tock - tick).as_secs_f64());
 
     assert_eq!(cumulative_flows.len(), network.links().len());
     assert!(
@@ -114,5 +125,6 @@ fn aon_test() -> Result<()> {
             .all(|(cinflow, coutflow)| cinflow.num_points() == time_steps + 1
                 && coutflow.num_points() == time_steps + 1)
     );
+
     Ok(())
 }

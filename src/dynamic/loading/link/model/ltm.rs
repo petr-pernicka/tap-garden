@@ -21,7 +21,7 @@ impl LinkModel<TrapezoidalFd> for Ltm {
 
         let t0 = ((tn + 1) as f64 - fd.length() / (fd.free_flow_speed() * step_size)).max(0.0);
 
-        debug_assert!(tn == 0 || tn > 0 && t0 < tn as f64);
+        debug_assert!(t0 < (tn + 1) as f64);
 
         let (coutflow_tn_plus_1, phi) = cinflow.value_interpolate(t0);
 
@@ -44,8 +44,8 @@ impl LinkModel<TrapezoidalFd> for Ltm {
         debug_assert!(tn < coutflow.num_points());
 
         let t0 = ((tn + 1) as f64 - fd.length() / (fd.backward_wave_speed() * step_size)).max(0.0);
-
-        debug_assert!(tn == 0 || tn > 0 && t0 < tn as f64);
+        
+        debug_assert!(t0 < (tn + 1) as f64);
 
         let (cinflow_tn_plus_1, psi) = coutflow.value_interpolate(t0);
         let cinflow_tn_plus_1 = cinflow_tn_plus_1 + fd.jam_density() * fd.length();
