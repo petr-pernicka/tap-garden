@@ -6,12 +6,12 @@ pub struct OutgoingLinkIndices {
 }
 
 impl OutgoingLinkIndices {
-    pub fn new(nodes: usize, destinations: usize, time_steps: usize) -> Self {
+    pub fn new(nodes: usize, time_steps: usize, destinations: usize) -> Self {
         Self {
             data: vec![0; nodes * destinations * time_steps],
             nodes,
-            destinations,
             time_steps,
+            destinations,
         }
     }
 
@@ -20,7 +20,7 @@ impl OutgoingLinkIndices {
         debug_assert!(tn < self.time_steps);
         debug_assert!(destination < self.destinations);
 
-        self.data[(node * self.time_steps + tn) * self.destinations + destination] = index;
+        self.data[destination * self.time_steps * self.nodes + tn * self.nodes + node] = index;
     }
 
     pub fn get_index(&self, node: usize, tn: usize, destination: usize) -> u8 {
@@ -28,6 +28,6 @@ impl OutgoingLinkIndices {
         debug_assert!(tn < self.time_steps);
         debug_assert!(destination < self.destinations);
 
-        self.data[(node * self.time_steps + tn) * self.destinations + destination]
+        self.data[destination * self.time_steps * self.nodes + tn * self.nodes + node]
     }
 }

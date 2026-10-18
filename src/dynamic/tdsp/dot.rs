@@ -10,6 +10,10 @@ pub struct DOT<FD> {
 }
 
 impl<FD: FundamentalDiagram> DOT<FD> {
+    pub fn new() -> Self {
+        Self { fd: PhantomData }
+    }
+
     pub fn run<const SSSP: bool>(
         &self,
         network: &DynamicNetwork<MixtureOutgoingFractions, FD>,
@@ -41,27 +45,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
 
         // 3. (Optional) Initialize costs at the last time step
         if SSSP {
-            let mut sssp = SSSP::new(network);
-
-            let last_step_travel_times = travel_times
-                .iter()
-                .map(|tt| *tt.last().unwrap())
-                .collect::<Vec<_>>();
-
-            for destination in network.zones() {
-                sssp.all_to_one(destination, &last_step_travel_times);
-
-                for node in network.nodes() {
-                    let outgoing_index = network
-                        .outgoing_links(node)
-                        .iter()
-                        .position(|link| link.index() == sssp.tree()[node])
-                        .unwrap();
-
-                    indices.set_index(node, time_steps - 1, destination, outgoing_index as u8);
-                    costs.set_cost(node, time_steps - 1, destination, sssp.distance()[node]);
-                }
-            }
+            Self::run_sssp(network, travel_times, time_steps, &mut indices, &mut costs);
         }
 
         // 4. Set the rest of the values in decreasing order of time
@@ -115,7 +99,8 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         let normalized_travel_time = travel_time / step_size;
         debug_assert!(
             normalized_travel_time >= 1.0,
-            "DOT algorithm does not support violated CFL condition."
+            "DOT algorithm does not support violated CFL condition: {}",
+            normalized_travel_time
         );
 
         let normalized_travel_time_rounded = normalized_travel_time.round() as usize;
@@ -124,5 +109,39 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // would arrive at the end of the link
         let time_of_arrival = (tn + normalized_travel_time_rounded).min(time_steps - 1);
         travel_time + costs.get_cost(link.head(), time_of_arrival, destination)
+    }
+
+    fn run_sssp(
+        network: &DynamicNetwork<MixtureOutgoingFractions, FD>,
+        travel_times: &[Vec<f64>],
+        time_steps: usize,
+        indices: &mut OutgoingLinkIndices,
+        costs: &mut Costs,
+    ) {
+        let mut sssp = SSSP::new(network);
+
+        let last_step_travel_times = travel_times
+            .iter()
+            .map(|tt| *tt.last().unwrap())
+            .collect::<Vec<_>>();
+
+        for destination in network.zones() {
+            sssp.all_to_one(destination, &last_step_travel_times);
+
+            for node in network.nodes() {
+                if sssp.tree()[node] == usize::MAX {
+                    continue;
+                }
+
+                let outgoing_index = network
+                    .outgoing_links(node)
+                    .iter()
+                    .position(|link| link.index() == sssp.tree()[node])
+                    .unwrap();
+
+                indices.set_index(node, time_steps - 1, destination, outgoing_index as u8);
+                costs.set_cost(node, time_steps - 1, destination, sssp.distance()[node]);
+            }
+        }
     }
 }

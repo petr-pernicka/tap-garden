@@ -1,3 +1,4 @@
+use std::slice::Iter;
 use crate::static_::ODM;
 
 pub struct TimeDependentODM {
@@ -38,6 +39,10 @@ impl TimeDependentODM {
         debug_assert!(scale >= 0.);
 
         self.demand.iter_mut().for_each(|x| *x *= scale);
+    }
+
+    pub fn iter(&self) -> Iter<'_, f64> {
+        self.demand.iter()
     }
 
     pub fn from_static_uniform(odm: &ODM, time_steps: usize) -> Self {
