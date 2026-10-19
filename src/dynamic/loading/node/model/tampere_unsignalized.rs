@@ -59,7 +59,7 @@ impl NodeModel for TampereUnsignalized {
             }
         }
 
-        // 2. Determine oriented capacities.
+        // 2. Determine oriented priorities.
         let oriented_priorities = turning_fractions.mul_rows(&self.priorities);
 
         // Level of reduction
@@ -124,13 +124,13 @@ impl NodeModel for TampereUnsignalized {
             for ij in 0..sending_flows.len() {
                 if U[min_lor_jk].get(ij) {
                     for jk in 0..receiving_flows.len() {
-                        inflows[ij] += min_lor * oriented_sending_flows[(ij, jk)];
-                        outflows[jk] += min_lor * oriented_sending_flows[(ij, jk)];
+                        inflows[ij] += min_lor * oriented_priorities[(ij, jk)];
+                        outflows[jk] += min_lor * oriented_priorities[(ij, jk)];
                     }
 
                     for jk in 0..receiving_flows.len() {
                         if J.get(jk) {
-                            R[jk] -= min_lor * oriented_sending_flows[(ij, jk)];
+                            R[jk] -= min_lor * oriented_priorities[(ij, jk)];
 
                             if jk != min_lor_jk {
                                 let a = U[min_lor_jk];

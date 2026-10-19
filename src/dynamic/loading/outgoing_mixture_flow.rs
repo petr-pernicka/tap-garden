@@ -11,7 +11,7 @@ pub fn outgoing_mixture_flow(
 ) -> MixtureFlow {
     debug_assert!(flow >= 0.);
 
-    if flow < 1e-1 {
+    if flow < 1e-8 {
         return MixtureFlow::zero();
     }
     if tn == 0 {
