@@ -16,14 +16,29 @@ use tap_garden::io;
 
 #[test]
 fn dot_test() -> Result<()> {
-    let (node_data, link_data, demand_data) = io::gmns::load_gmns_dir("./data/ChicagoSketch")?;
+    dot_test_parameterized("./data/SiouxFalls", 60, 1.0, 30, 1.0)?;
+    dot_test_parameterized("./data/ChicagoSketch", 800, 0.1, 30, 0.5)?;
+
+    Ok(())
+}
+
+fn dot_test_parameterized(
+    network_dir: &str,
+    time_steps: usize,
+    step_size: f64,
+    odm_steps: usize,
+    fftt_scale: f64,
+) -> Result<()> {
+    let (node_data, link_data, demand_data) = io::gmns::load_gmns_dir(network_dir)?;
     let (network, odm, id2index) = io::parse::from_gmns_data(&node_data, &link_data, &demand_data);
     let (network, Some(id2index)) = network.expand(Some(id2index)) else {
         unreachable!()
     };
 
-    let mut free_flow_times = vec![0.1; network.links().len()];
+    let mut free_flow_times = vec![0.0001; network.links().len()];
     let mut fds = vec![None; network.links().len()];
+
+    // Create FDs of existing links
     for ld in link_data {
         let i = network
             .links()
@@ -33,11 +48,10 @@ fn dot_test() -> Result<()> {
             })
             .unwrap();
 
-        free_flow_times[i] = ld.vdf_fftt.max(0.1);
+        free_flow_times[i] = (ld.vdf_fftt * fftt_scale).max(0.1);
 
         let length = ld.vdf_length_mi.max(0.1);
-        let free_flow_time = (ld.vdf_fftt / 2.0).max(0.1);
-        let free_flow_speed = length / free_flow_time;
+        let free_flow_speed = length / free_flow_times[i];
         fds[i] = Some(TrapezoidalFd::triangular(
             length,
             OmitParam::JamDensity {
@@ -59,6 +73,7 @@ fn dot_test() -> Result<()> {
         link_models.push(model);
     }
 
+    // Set FDs of virtual links (created by network.expand())
     let fds = fds
         .into_iter()
         .map(|fd| {
@@ -70,7 +85,7 @@ fn dot_test() -> Result<()> {
         })
         .collect::<Vec<_>>();
 
-    let odm = Rc::new(TimeDependentODM::from_static_gaussian(&odm, 30));
+    let odm = Rc::new(TimeDependentODM::from_static_gaussian(&odm, odm_steps));
 
     let zones = network
         .zones()
@@ -105,8 +120,6 @@ fn dot_test() -> Result<()> {
         fds,
     );
 
-    let time_steps = 1000;
-    let step_size = 0.1;
     let dnl = BasicDnl;
     let dot = DOT::new();
 
@@ -116,13 +129,13 @@ fn dot_test() -> Result<()> {
     let tock = Instant::now();
     println!(" ({:.2}s)", (tock - tick).as_secs_f64());
 
-    print!("Running DNL...");
+    println!("Running DNL...");
     let tick = Instant::now();
     let cumulative_flows = dnl.run(&network, time_steps, step_size, &routing_params);
     let tock = Instant::now();
-    println!(" ({:.2}s)", (tock - tick).as_secs_f64());
+    println!("({:.2}s)", (tock - tick).as_secs_f64());
 
-    print!("Computing travel times...");
+    println!("Computing travel times...");
     let tick = Instant::now();
     let travel_times = cumulative_flows
         .iter()
@@ -132,11 +145,11 @@ fn dot_test() -> Result<()> {
         })
         .collect::<Vec<_>>();
     let tock = Instant::now();
-    println!(" ({:.2}s)", (tock - tick).as_secs_f64());
+    println!("({:.2}s)", (tock - tick).as_secs_f64());
 
     print!("Running DOT...");
     let tick = Instant::now();
-    let (costs, indices) = dot.run::<true>(&network, time_steps, step_size, &travel_times);
+    let (_costs, indices) = dot.run::<true>(&network, time_steps, step_size, &travel_times);
     let tock = Instant::now();
     println!(" ({:.2}s)", (tock - tick).as_secs_f64());
 

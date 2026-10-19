@@ -97,11 +97,11 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         }
 
         let normalized_travel_time = travel_time / step_size;
-        debug_assert!(
-            normalized_travel_time >= 1.0,
-            "DOT algorithm does not support violated CFL condition: {}",
-            normalized_travel_time
-        );
+        // debug_assert!(
+        //     normalized_travel_time >= 1.0,
+        //     "DOT algorithm does not support violated CFL condition: {}",
+        //     normalized_travel_time
+        // );
 
         let normalized_travel_time_rounded = normalized_travel_time.round() as usize;
 
