@@ -13,7 +13,7 @@ pub fn total_system_travel_time(cumulative_flows: &Vec<(Cvn, Cvn)>, step_size: f
         tstt += inflow.integrate() - outflow.integrate();
     }
 
-    tstt
+    tstt * step_size
 }
 
 pub fn shortest_path_travel_time(
@@ -32,39 +32,61 @@ pub fn shortest_path_travel_time(
             for tn in 0..tdodm.time_steps() {
                 let demand = tdodm.demand(origin, destination, tn);
                 if demand > 0.0 {
-                    let mut cost = 0.0;
-                    let mut time = tn as f64;
-                    let mut tail = origin;
-
-                    while tail != destination {
-                        let j = if time >= (time_steps - 1) as f64 {
-                            indices.get_index(tail, time_steps - 1, destination)
-                        } else {
-                            indices.get_index(tail, time as usize, destination)
-                        };
-
-                        let link = &network.outgoing_links(tail)[j as usize];
-
-                        let link_travel_time = link_travel_time(
-                            time,
-                            &cumulative_flows[link.index()].0,
-                            &cumulative_flows[link.index()].1,
+                    sptt += demand
+                        * retrace(
+                            network,
+                            cumulative_flows,
+                            indices,
+                            time_steps,
                             step_size,
-                            fftt[link.index()],
+                            fftt,
+                            origin,
+                            destination,
+                            tn,
                         );
-
-                        cost += link_travel_time;
-                        time += link_travel_time / step_size;
-                        tail = link.head();
-                    }
-
-                    sptt += cost.min((time_steps - tn) as f64 * step_size);
                 }
             }
         }
     }
 
     sptt
+}
+
+fn retrace(
+    network: &Network,
+    cumulative_flows: &Vec<(Cvn, Cvn)>,
+    indices: &OutgoingLinkIndices,
+    time_steps: usize,
+    step_size: f64,
+    fftt: &[f64],
+    origin: usize,
+    destination: usize,
+    tn: usize,
+) -> f64 {
+    let mut cost = 0.0;
+    let mut time = tn as f64;
+    let mut tail = origin;
+
+    while tail != destination {
+        let time_capped = (time as usize).min(time_steps - 1);
+        let jk = indices.get_index(tail, time_capped, destination) as usize;
+
+        let link = &network.outgoing_links(tail)[jk];
+
+        let link_travel_time = link_travel_time(
+            time,
+            &cumulative_flows[link.index()].0,
+            &cumulative_flows[link.index()].1,
+            step_size,
+            fftt[link.index()],
+        );
+
+        cost += link_travel_time;
+        time += link_travel_time / step_size;
+        tail = link.head();
+    }
+
+    cost.min((time_steps - tn) as f64 * step_size)
 }
 
 pub fn relative_gap(tstt: f64, sptt: f64) -> f64 {
