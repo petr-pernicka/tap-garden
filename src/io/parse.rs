@@ -13,7 +13,8 @@ pub fn from_gmns_data(
         .filter(|nd| nd.zone_id.is_some())
         .map(|nd| (nd.zone_id.unwrap(), nd.node_id))
         .collect::<HashMap<_, _>>();
-    let zone_ids = zone_id2node_id.keys().cloned().collect::<Vec<_>>();
+    let mut zone_ids = zone_id2node_id.keys().cloned().collect::<Vec<_>>();
+    zone_ids.sort_unstable();
 
     let links = link_data
         .iter()

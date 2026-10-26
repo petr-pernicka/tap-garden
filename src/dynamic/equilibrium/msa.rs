@@ -25,11 +25,12 @@ impl<RP, FD: FundamentalDiagram> DynamicUserEquilibrium<RP, FD> for MSA<RP, FD> 
         &mut self,
         network: &DynamicNetwork<RP, FD>,
         time_steps: usize,
-        mut mofs: MixtureOutgoingFractions,
+        mofs: MixtureOutgoingFractions,
         indices: &OutgoingLinkIndices,
         _costs: &Costs,
     ) -> MixtureOutgoingFractions {
         let lambda = 1.0 / (self.iteration + 2) as f64;
+        let mut mofs_new = MixtureOutgoingFractions::new(network, time_steps);
 
         for n in network.nodes() {
             for tn in 0..time_steps {
@@ -43,15 +44,15 @@ impl<RP, FD: FundamentalDiagram> DynamicUserEquilibrium<RP, FD> for MSA<RP, FD> 
                         let new_fraction =
                             (1.0 - lambda) * current_fraction + is_link_on_shortest_path * lambda;
 
-                        mofs.set_fraction(n, tn, d, jk, new_fraction);
+                        mofs_new.set_fraction(n, tn, d, jk, new_fraction);
                     }
                 }
             }
 
-            mofs.compress_for_node(n);
+            mofs_new.compress_for_node(n);
         }
 
         self.iteration += 1;
-        mofs
+        mofs_new
     }
 }

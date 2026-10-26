@@ -197,6 +197,7 @@ impl MofIntersection {
             }
         }
 
+        self.pool = pool;
         temporary_grid.fill(0.);
     }
 
