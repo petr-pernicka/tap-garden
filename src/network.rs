@@ -204,6 +204,14 @@ impl Network {
     pub fn mirror_link(&self, link_index: usize) -> &Option<Link> {
         &self.mirror_links[link_index]
     }
+
+    pub fn index_of_link(&self, tail: NodeIndex, head: NodeIndex) -> Option<usize> {
+        self.links()
+            .iter()
+            .position(|link| {
+                link.tail() == tail && link.head() == head
+            })
+    }
 }
 
 #[derive(Debug, Clone)]

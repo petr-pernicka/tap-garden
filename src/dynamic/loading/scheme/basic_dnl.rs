@@ -68,7 +68,7 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                         )
                     })
                     .collect::<Vec<_>>();
-                
+
                 let receiving_flows = network
                     .outgoing_links(node)
                     .iter()
@@ -122,14 +122,16 @@ impl<RP, FD: FundamentalDiagram> DnlScheme<RP, FD> for BasicDnl {
                     });
             }
 
-            println!(
-                "[Time {}] Total flow on network: {}",
+            print!(
+                "\r[Time {}] Total flow on network: {}      ",
                 tn,
                 cvns.iter()
                     .map(|(cinflow, coutflow)| cinflow[tn + 1] - coutflow[tn + 1])
                     .sum::<f64>()
             )
         }
+
+        println!();
 
         cvns
     }

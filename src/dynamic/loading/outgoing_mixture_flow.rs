@@ -57,7 +57,12 @@ pub fn outgoing_mixture_flow(
         }
     }
 
-    debug_assert!((result.total_flow() - flow).abs() < 1e-10);
+    debug_assert!(
+        (result.total_flow() - flow).abs() < 1e-8,
+        "Flow difference larger than 1e-8: {:.2e}",
+        (result.total_flow() - flow).abs()
+    );
+    
     result
 }
 

@@ -18,6 +18,10 @@ impl<T> Matrix<T> {
     pub fn data(&self) -> &[T] {
         &self.data
     }
+    
+    pub fn data_mut(&mut self) -> &mut [T] {
+        &mut self.data
+    }
 }
 
 impl<T: Mul<Output = T> + Copy> Matrix<T> {
