@@ -2,8 +2,8 @@ use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::loading::link::model::LinkModel;
 use crate::dynamic::loading::node::model::NodeModel;
 use crate::dynamic::loading::node::routing::{NonRoutedModel, RoutedModel, Zone};
-use crate::network::Network;
-use std::ops::Deref;
+use crate::network::{Network, NodeIndex};
+use std::ops::{Deref, Range};
 
 pub struct DynamicNetwork<RP, FD: FundamentalDiagram> {
     network: Network,
@@ -66,6 +66,10 @@ impl<RP, FD: FundamentalDiagram> DynamicNetwork<RP, FD> {
 
     pub fn link_models(&self) -> &Vec<Box<dyn LinkModel<FD>>> {
         &self.link_models
+    }
+    
+    pub fn routed_nodes(&self) -> Range<NodeIndex> {
+        self.num_nonrouted_models..self.nodes().len()
     }
 
     pub fn fundamental_diagrams(&self) -> &Vec<FD> {

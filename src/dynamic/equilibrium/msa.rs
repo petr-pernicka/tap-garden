@@ -32,7 +32,7 @@ impl<RP, FD: FundamentalDiagram> DynamicUserEquilibrium<RP, FD> for MSA<RP, FD> 
         let lambda = 1.0 / (self.iteration + 2) as f64;
         let mut mofs_new = MixtureOutgoingFractions::new(network, network.nodes(), time_steps);
 
-        for n in network.nodes() {
+        for n in network.routed_nodes() {
             for tn in 0..time_steps {
                 for d in network.zones() {
                     for jk in 0..network.outgoing_links(n).len() {

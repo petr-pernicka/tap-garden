@@ -52,11 +52,12 @@ impl MixtureOutgoingFractions {
     }
 
     pub fn set_fraction(&mut self, n: usize, tn: usize, d: usize, j: usize, value: f64) {
-        debug_assert!(n < self.mof_intersections.len());
+        debug_assert!(self.used_nodes.contains(&n));
         debug_assert!(tn < self.shared_data.borrow().time_steps);
         debug_assert!(d < self.shared_data.borrow().destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
         debug_assert!((0.0..=1.).contains(&value));
+        let n = n - self.used_nodes.start;
 
         let mut shared_data = self.shared_data.borrow_mut();
         let destinations = shared_data.destinations;
@@ -70,6 +71,7 @@ impl MixtureOutgoingFractions {
         debug_assert!(tn < self.shared_data.borrow().time_steps);
         debug_assert!(d < self.shared_data.borrow().destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
+        let n = n - self.used_nodes.start;
 
         self.mof_intersections[n].get_fraction(tn, d, j)
     }

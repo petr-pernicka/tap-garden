@@ -25,7 +25,7 @@ impl<RP, FD: FundamentalDiagram> AON<RP, FD> {
         }
 
         let mut mofs = MixtureOutgoingFractions::new(network, network.nodes(), time_steps);
-        for node in network.nodes() {
+        for node in network.routed_nodes() {
             for destination in network.zones() {
 
                 let j = if node == destination {
