@@ -1,16 +1,20 @@
-use crate::network::Network;
+use crate::network::{Network, NodeIndex};
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
+use std::ops::Range;
 use std::rc::Rc;
 
 pub struct MixtureOutgoingFractions {
     shared_data: Rc<RefCell<SharedData>>,
     mof_intersections: Vec<MofIntersection>,
+    used_nodes: Range<NodeIndex>,
 }
 
 impl MixtureOutgoingFractions {
-    pub fn new(network: &Network, time_steps: usize) -> Self {
+    pub fn new(network: &Network, used_nodes: Range<NodeIndex>, time_steps: usize) -> Self {
+        debug_assert!(used_nodes.end <= network.nodes().len());
+
         let max_outgoing_links = network
             .nodes()
             .map(|n| network.outgoing_links(n).len())
@@ -24,8 +28,8 @@ impl MixtureOutgoingFractions {
         };
         let shared_data = Rc::new(RefCell::new(shared_data));
 
-        let mut mof_intersections = Vec::with_capacity(network.nodes().len());
-        for n in network.nodes() {
+        let mut mof_intersections = Vec::with_capacity(used_nodes.len());
+        for n in used_nodes.clone() {
             mof_intersections.push(MofIntersection {
                 shared_data: shared_data.clone(),
                 num_outgoing_links: network.outgoing_links(n).len(),
@@ -39,9 +43,10 @@ impl MixtureOutgoingFractions {
         Self {
             shared_data,
             mof_intersections,
+            used_nodes,
         }
     }
-    
+
     pub fn compress_for_node(&mut self, node: usize) {
         self.mof_intersections[node].compress()
     }
@@ -93,7 +98,7 @@ impl MofIntersection {
     fn get_fraction(&self, tn: usize, d: usize, j: usize) -> f64 {
         let mut i = self.offsets[d];
         let last = self.offsets[d + 1] - 1;
-        
+
         while i < last && self.indices[i + 1] <= tn {
             i += 1;
         }
@@ -125,8 +130,10 @@ impl MofIntersection {
         for d in 0..*destinations {
             for tn in 0..*time_steps {
                 // The slice of the vector for (tn, d).
-                let start = tn * destinations * self.num_outgoing_links + d * self.num_outgoing_links;
-                let end = tn * destinations * self.num_outgoing_links + (d + 1) * self.num_outgoing_links;
+                let start =
+                    tn * destinations * self.num_outgoing_links + d * self.num_outgoing_links;
+                let end =
+                    tn * destinations * self.num_outgoing_links + (d + 1) * self.num_outgoing_links;
                 let vector = &temporary_grid[start..end];
 
                 let singleton_index = Self::is_singleton(vector);
@@ -179,7 +186,6 @@ impl MofIntersection {
         self.values = vec![0; *total_num_periods];
 
         for d in 0..*destinations {
-
             // values[i] is the value that lies in the grid on positions from
             // grid[indices[i] * destinations + d] to
             // grid[(indices[i + 1] - 1) * destinations + d].

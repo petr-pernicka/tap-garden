@@ -30,7 +30,7 @@ impl<RP, FD: FundamentalDiagram> DynamicUserEquilibrium<RP, FD> for MSA<RP, FD> 
         _costs: &Costs,
     ) -> MixtureOutgoingFractions {
         let lambda = 1.0 / (self.iteration + 2) as f64;
-        let mut mofs_new = MixtureOutgoingFractions::new(network, time_steps);
+        let mut mofs_new = MixtureOutgoingFractions::new(network, network.nodes(), time_steps);
 
         for n in network.nodes() {
             for tn in 0..time_steps {

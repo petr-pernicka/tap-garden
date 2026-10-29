@@ -24,7 +24,7 @@ impl<RP, FD: FundamentalDiagram> AON<RP, FD> {
             successor_trees.push(sssp.tree().to_vec());
         }
 
-        let mut mofs = MixtureOutgoingFractions::new(network, time_steps);
+        let mut mofs = MixtureOutgoingFractions::new(network, network.nodes(), time_steps);
         for node in network.nodes() {
             for destination in network.zones() {
 
