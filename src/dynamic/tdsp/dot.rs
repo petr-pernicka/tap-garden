@@ -51,29 +51,22 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // 4. Set the rest of the values in decreasing order of time
         for destination in network.zones() {
             for tn in (0..=time_steps - 2).rev() {
-                for link in network.links() {
-                    let tail = link.tail();
-
-                    let new_cost = Self::compute_cost(
-                        link,
-                        tn,
-                        destination,
-                        &costs,
-                        time_steps,
-                        step_size,
-                        travel_times,
-                    );
-
-                    if new_cost < costs.get_cost(tail, tn, destination) {
-                        costs.set_cost(tail, tn, destination, new_cost);
-
-                        let jk = network
-                            .outgoing_links(tail)
-                            .iter()
-                            .position(|l| l.index() == link.index())
-                            .unwrap();
-
-                        indices.set_index(tail, tn, destination, jk as u8);
+                for node in network.nodes() {
+                    for (i, jk) in network.outgoing_links(node).iter().enumerate() {
+                        let new_cost = Self::compute_cost(
+                            jk,
+                            tn,
+                            destination,
+                            &costs,
+                            time_steps,
+                            step_size,
+                            travel_times,
+                        );
+                        
+                        if new_cost < costs.get_cost(node, tn, destination) {
+                            costs.set_cost(node, tn, destination, new_cost);
+                            indices.set_index(node, tn, destination, i as u8);
+                        }
                     }
                 }
             }
