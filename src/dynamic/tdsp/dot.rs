@@ -1,7 +1,7 @@
 use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::routing::MixtureOutgoingFractions;
 use crate::dynamic::{Costs, DynamicNetwork, OutgoingLinkIndices};
-use crate::network::Link;
+use crate::network::{Link, Network};
 use crate::static_::sssp::SSSP;
 use std::marker::PhantomData;
 
@@ -37,11 +37,11 @@ impl<FD: FundamentalDiagram> DOT<FD> {
             OutgoingLinkIndices::new(network.nodes().len(), time_steps, network.zones().len());
 
         // 2. Initialize costs from destinations to themselves to 0
-        for tn in 0..time_steps {
-            for destination in network.zones() {
-                costs.set_cost(destination, tn, destination, 0.0);
-            }
-        }
+        // for tn in 0..time_steps {
+        //     for destination in network.zones() {
+        //         costs.set_cost(destination, tn, destination, 0.0);
+        //     }
+        // }
 
         // 3. (Optional) Initialize costs at the last time step
         if SSSP {
@@ -61,6 +61,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
                             time_steps,
                             step_size,
                             travel_times,
+                            network
                         );
                         
                         if new_cost < costs.get_cost(node, tn, destination) {
@@ -75,6 +76,8 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         (costs, indices)
     }
 
+    /// Computes the travel time from link tail to destination, when departing on the
+    /// link at tn.
     fn compute_cost(
         link: &Link,
         tn: usize,
@@ -83,10 +86,20 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         time_steps: usize,
         step_size: f64,
         travel_times: &[Vec<f64>],
+        network: &Network,
     ) -> f64 {
         let travel_time = travel_times[link.index()][tn + 1];
         if travel_time == f64::INFINITY {
             return f64::INFINITY;
+        }
+        
+        // Used in place of step 2. (cost at the destination is 0 for all tn)
+        if link.head() == destination {
+            return travel_time;
+        }
+        
+        if network.outgoing_links(link.head()).len() == 1 {
+            
         }
 
         let normalized_travel_time = travel_time / step_size;
