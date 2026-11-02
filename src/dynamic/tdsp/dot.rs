@@ -1,7 +1,8 @@
 use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::routing::MixtureOutgoingFractions;
-use crate::dynamic::{Costs, DynamicNetwork, OutgoingLinkIndices};
-use crate::network::{Link, Network};
+use crate::dynamic::travel_time::link_travel_time;
+use crate::dynamic::{Costs, Cvn, DynamicNetwork, OutgoingLinkIndices};
+use crate::network::Link;
 use crate::static_::sssp::SSSP;
 use std::marker::PhantomData;
 
@@ -20,6 +21,8 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         time_steps: usize,
         step_size: f64,
         travel_times: &[Vec<f64>],
+        cumulative_flows: &[(Cvn, Cvn)],
+        free_flow_travel_time: &[f64],
     ) -> (Costs, OutgoingLinkIndices) {
         debug_assert!(step_size > 0.0);
         debug_assert_eq!(travel_times.len(), network.links().len());
@@ -61,9 +64,11 @@ impl<FD: FundamentalDiagram> DOT<FD> {
                             time_steps,
                             step_size,
                             travel_times,
-                            network
+                            network,
+                            cumulative_flows,
+                            free_flow_travel_time,
                         );
-                        
+
                         if new_cost < costs.get_cost(node, tn, destination) {
                             costs.set_cost(node, tn, destination, new_cost);
                             indices.set_index(node, tn, destination, i as u8);
@@ -78,28 +83,44 @@ impl<FD: FundamentalDiagram> DOT<FD> {
 
     /// Computes the travel time from link tail to destination, when departing on the
     /// link at tn.
-    fn compute_cost(
-        link: &Link,
+    fn compute_cost<'a>(
+        mut link: &'a Link,
         tn: usize,
         destination: usize,
         costs: &Costs,
         time_steps: usize,
         step_size: f64,
         travel_times: &[Vec<f64>],
-        network: &Network,
+        network: &'a DynamicNetwork<MixtureOutgoingFractions, FD>,
+        cumulative_flows: &[(Cvn, Cvn)],
+        free_flow_travel_time: &[f64],
     ) -> f64 {
-        let travel_time = travel_times[link.index()][tn + 1];
+        let mut travel_time = travel_times[link.index()][tn + 1];
         if travel_time == f64::INFINITY {
             return f64::INFINITY;
         }
-        
+
         // Used in place of step 2. (cost at the destination is 0 for all tn)
         if link.head() == destination {
             return travel_time;
         }
-        
-        if network.outgoing_links(link.head()).len() == 1 {
-            
+
+        // If the head node is not routed (i.e. has only 1 outgoing link), the single
+        // outgoing link must be part of the shortest path.
+        loop {
+            if !network.routed_nodes().contains(&link.head()) {
+                let a = link_travel_time(
+                    tn as f64 + travel_time,
+                    &cumulative_flows[link.index()].0,
+                    &cumulative_flows[link.index()].1,
+                    step_size,
+                    free_flow_travel_time[link.index()],
+                );
+                travel_time += a;
+                link = &network.outgoing_links(link.head())[0];
+            } else {
+                break;
+            }
         }
 
         let normalized_travel_time = travel_time / step_size;

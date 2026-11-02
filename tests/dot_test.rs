@@ -53,7 +53,14 @@ fn dot_test_parameterized(
 
     let (_costs, indices) = time_it!(
         "Running DOT",
-        dot.run::<true>(&network, time_steps, step_size, &travel_times)
+        dot.run::<true>(
+            &network,
+            time_steps,
+            step_size,
+            &travel_times,
+            &cumulative_flows,
+            &free_flow_travel_time
+        )
     );
 
     let total_demand = odm.iter().sum::<f64>();

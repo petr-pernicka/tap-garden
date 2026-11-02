@@ -55,7 +55,14 @@ fn dta_test_parameterized(
 
         let (mut _costs, mut indices) = time_it!(
             "Running DOT",
-            dot.run::<true>(&network, time_steps, step_size, &travel_times)
+            dot.run::<true>(
+                &network,
+                time_steps,
+                step_size,
+                &travel_times,
+                &cumulative_flows,
+                &free_flow_travel_time
+            )
         );
 
         let total_demand = odm.iter().sum::<f64>();
@@ -109,7 +116,14 @@ fn dta_test_parameterized(
 
             (_costs, indices) = time_it!(
                 "Running DOT",
-                dot.run::<true>(&network, time_steps, step_size, &travel_times)
+                dot.run::<true>(
+                    &network,
+                    time_steps,
+                    step_size,
+                    &travel_times,
+                    &cumulative_flows,
+                    &free_flow_travel_time
+                )
             );
 
             let tstt = convergence::total_system_travel_time(&cumulative_flows, step_size);
