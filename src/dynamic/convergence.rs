@@ -69,7 +69,15 @@ fn retrace(
 
     while tail != destination {
         let time_capped = (time as usize).min(time_steps - 1);
-        let jk = indices.get_index(tail, time_capped, destination) as usize;
+        
+        let jk = if network.outgoing_links(tail).len() == 1 {
+            // We do not want to access indices for node which is not in 
+            // indices.used_nodes. TODO generalized for any used_nodes, not just nodes 
+            // with # of outgoing links = 1.
+            0
+        } else {
+            indices.get_index(tail, time_capped, destination) as usize
+        };
 
         let link = &network.outgoing_links(tail)[jk];
 

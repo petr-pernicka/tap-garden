@@ -31,13 +31,13 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // 1. Initialize all costs to infinity, initialize shortest path indices
         let mut costs = Costs::new(
             f64::INFINITY,
-            network.nodes().len(),
+            network.routed_nodes(),
             time_steps,
             network.zones().len(),
         );
 
         let mut indices =
-            OutgoingLinkIndices::new(network.nodes().len(), time_steps, network.zones().len());
+            OutgoingLinkIndices::new(network.routed_nodes(), time_steps, network.zones().len());
 
         // 2. Initialize costs from destinations to themselves to 0
         // for tn in 0..time_steps {
@@ -54,7 +54,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // 4. Set the rest of the values in decreasing order of time
         for destination in network.zones() {
             for tn in (0..=time_steps - 2).rev() {
-                for node in network.nodes() {
+                for node in network.routed_nodes() {
                     for (i, jk) in network.outgoing_links(node).iter().enumerate() {
                         let new_cost = Self::compute_cost(
                             jk,
@@ -155,7 +155,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         for destination in network.zones() {
             sssp.all_to_one(destination, &last_step_travel_times);
 
-            for node in network.nodes() {
+            for node in network.routed_nodes() {
                 if sssp.tree()[node] == usize::MAX {
                     continue;
                 }
