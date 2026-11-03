@@ -81,9 +81,9 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         (costs, indices)
     }
 
-    /// Computes the travel time from link tail to destination, when departing on the
-    /// link at tn.
-    fn compute_cost<'a>(
+    /// Computes the travel time from `link.tail` to `destination`, when departing on the
+    /// `link` at `tn`.
+    pub fn compute_cost<'a>(
         mut link: &'a Link,
         tn: usize,
         destination: usize,

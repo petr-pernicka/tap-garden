@@ -1,7 +1,9 @@
 mod aon;
-mod msa;
 mod due;
+mod msa;
+mod rgp;
 
 pub use aon::AON;
-pub use msa::MSA;
 pub use due::DynamicUserEquilibrium;
+pub use msa::MSA;
+pub use rgp::RGP;

@@ -4,26 +4,24 @@ use crate::dynamic::routing::MixtureOutgoingFractions;
 use crate::dynamic::{Costs, DynamicNetwork, OutgoingLinkIndices};
 use std::marker::PhantomData;
 
-pub struct MSA<RP, FD> {
-    rp: PhantomData<RP>,
+pub struct MSA<FD> {
     fd: PhantomData<FD>,
     iteration: usize,
 }
 
-impl<RP, FD> MSA<RP, FD> {
+impl<FD> MSA<FD> {
     pub fn new() -> Self {
         Self {
-            rp: PhantomData,
             fd: PhantomData,
             iteration: 0,
         }
     }
 }
 
-impl<RP, FD: FundamentalDiagram> DynamicUserEquilibrium<RP, FD> for MSA<RP, FD> {
+impl<FD: FundamentalDiagram> DynamicUserEquilibrium<MixtureOutgoingFractions, FD> for MSA<FD> {
     fn compute_routing_parameters(
         &mut self,
-        network: &DynamicNetwork<RP, FD>,
+        network: &DynamicNetwork<MixtureOutgoingFractions, FD>,
         time_steps: usize,
         mofs: MixtureOutgoingFractions,
         indices: &OutgoingLinkIndices,
