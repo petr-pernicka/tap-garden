@@ -1,7 +1,7 @@
 use crate::dynamic::equilibrium::DynamicUserEquilibrium;
 use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::routing::MixtureOutgoingFractions;
-use crate::dynamic::{Costs, DynamicNetwork, OutgoingLinkIndices};
+use crate::dynamic::{Costs, Cvn, DynamicNetwork, OutgoingLinkIndices};
 use std::marker::PhantomData;
 
 pub struct MSA<FD> {
@@ -26,6 +26,10 @@ impl<FD: FundamentalDiagram> DynamicUserEquilibrium<MixtureOutgoingFractions, FD
         mofs: MixtureOutgoingFractions,
         indices: &OutgoingLinkIndices,
         _costs: &Costs,
+        _step_size: f64,
+        _travel_times: &[Vec<f64>],
+        _cumulative_flows: &[(Cvn, Cvn)],
+        _free_flow_travel_time: &[f64],
     ) -> MixtureOutgoingFractions {
         let lambda = 1.0 / (self.iteration + 2) as f64;
         let mut mofs_new = MixtureOutgoingFractions::new(network, network.nodes(), time_steps);

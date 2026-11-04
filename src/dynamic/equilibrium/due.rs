@@ -1,4 +1,4 @@
-use crate::dynamic::{Costs, DynamicNetwork, OutgoingLinkIndices};
+use crate::dynamic::{Costs, Cvn, DynamicNetwork, OutgoingLinkIndices};
 use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::routing::MixtureOutgoingFractions;
 
@@ -10,5 +10,9 @@ pub trait DynamicUserEquilibrium<RP, FD: FundamentalDiagram> {
         mofs: MixtureOutgoingFractions,
         indices: &OutgoingLinkIndices,
         costs: &Costs,
+        step_size: f64,
+        travel_times: &[Vec<f64>],
+        cumulative_flows: &[(Cvn, Cvn)],
+        free_flow_travel_time: &[f64],
     ) -> MixtureOutgoingFractions;
 }

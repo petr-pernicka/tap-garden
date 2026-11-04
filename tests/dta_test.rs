@@ -94,7 +94,11 @@ fn dta_test_parameterized(
                     time_steps,
                     routing_params,
                     &indices,
-                    &_costs
+                    &_costs,
+                    step_size,
+                    &travel_times,
+                    &cumulative_flows,
+                    &free_flow_travel_time,
                 )
             );
 
