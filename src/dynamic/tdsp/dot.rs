@@ -108,27 +108,29 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // If the head node is not routed (i.e. has only 1 outgoing link), the single
         // outgoing link must be part of the shortest path.
         loop {
-            if !network.routed_nodes().contains(&link.head()) {
-                let a = link_travel_time(
-                    tn as f64 + travel_time,
-                    &cumulative_flows[link.index()].0,
-                    &cumulative_flows[link.index()].1,
-                    step_size,
-                    free_flow_travel_time[link.index()],
-                );
-                travel_time += a;
-                link = &network.outgoing_links(link.head())[0];
-            } else {
+            if network.routed_nodes().contains(&link.head()) {
                 break;
             }
+            
+            let next_link = &network.outgoing_links(link.head())[0];
+            let tt = link_travel_time(
+                tn as f64 + travel_time / step_size,
+                &cumulative_flows[next_link.index()].0,
+                &cumulative_flows[next_link.index()].1,
+                step_size,
+                free_flow_travel_time[next_link.index()],
+            );
+            
+            travel_time += tt;
+            link = next_link;
         }
 
         let normalized_travel_time = travel_time / step_size;
-        // debug_assert!(
-        //     normalized_travel_time >= 1.0,
-        //     "DOT algorithm does not support violated CFL condition: {}",
-        //     normalized_travel_time
-        // );
+        debug_assert!(
+            normalized_travel_time >= 1.0,
+            "DOT algorithm does not support violated CFL condition: {}",
+            normalized_travel_time
+        );
 
         let normalized_travel_time_rounded = normalized_travel_time.round() as usize;
 

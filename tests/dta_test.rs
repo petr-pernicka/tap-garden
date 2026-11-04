@@ -37,12 +37,12 @@ fn dta_test_parameterized(
             AON::compute_routing_parameters(&network, &free_flow_travel_time, time_steps)
         );
 
-        let cumulative_flows = time_it!(
+        let mut cumulative_flows = time_it!(
             "Running DNL",
             dnl.run(&network, time_steps, step_size, &routing_params)
         );
 
-        let travel_times = time_it!(
+        let mut travel_times = time_it!(
             "Computing travel times",
             cumulative_flows
                 .iter()
@@ -102,12 +102,12 @@ fn dta_test_parameterized(
                 )
             );
 
-            let cumulative_flows = time_it!(
+            cumulative_flows = time_it!(
                 "Running DNL",
                 dnl.run(&network, time_steps, step_size, &routing_params)
             );
 
-            let travel_times = time_it!(
+            travel_times = time_it!(
                 "Computing travel times",
                 cumulative_flows
                     .iter()
