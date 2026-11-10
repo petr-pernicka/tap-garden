@@ -1,6 +1,7 @@
 mod common;
 use crate::common::{load_network, time_it};
 use anyhow::Result;
+use get_size2::GetSize;
 use tap_garden::dynamic::convergence;
 use tap_garden::dynamic::equilibrium::{AON, DynamicUserEquilibrium, MSA};
 use tap_garden::dynamic::loading::scheme::{BasicDnl, DnlScheme};
@@ -83,6 +84,7 @@ fn dta_test_parameterized(
         println!("SPTT: {sptt}");
         println!("RG: {rg:.2e}");
         println!("AEC: {aec:.2e}");
+        println!("Size of routing parameters: {} kB", routing_params.get_size() / 1024);
 
         for i in 1..=msa_steps {
             println!("======= Iteration {i} =======");
@@ -147,6 +149,7 @@ fn dta_test_parameterized(
             println!("SPTT: {sptt}");
             println!("RG: {rg:.2e}");
             println!("AEC: {aec:.2e}");
+            println!("Size of routing parameters: {} kB", routing_params.get_size() / 1024);
         }
     });
 

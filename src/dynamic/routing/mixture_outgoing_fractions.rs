@@ -4,7 +4,9 @@ use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::ops::Range;
 use std::rc::Rc;
+use get_size2::GetSize;
 
+#[derive(GetSize)]
 pub struct MixtureOutgoingFractions {
     destinations: usize,
     time_steps: usize,
@@ -82,6 +84,7 @@ impl MixtureOutgoingFractions {
     }
 }
 
+#[derive(GetSize)]
 struct MofIntersection {
     temporary_grid: Rc<RefCell<Vec<f64>>>,
     num_outgoing_links: usize,

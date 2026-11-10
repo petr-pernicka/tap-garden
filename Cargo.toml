@@ -7,6 +7,7 @@ edition = "2024"
 csv = "1.4"
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+get-size2 = { version = "0.11", default-features = true, features = ["derive"] }
 
 [dev-dependencies]
 criterion = { version = "0.8" }
