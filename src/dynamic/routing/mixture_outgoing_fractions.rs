@@ -6,7 +6,9 @@ use std::ops::Range;
 use std::rc::Rc;
 
 pub struct MixtureOutgoingFractions {
-    shared_data: Rc<RefCell<SharedData>>,
+    destinations: usize,
+    time_steps: usize,
+    temporary_grid: Rc<RefCell<Vec<f64>>>,
     mof_intersections: Vec<MofIntersection>,
     used_nodes: Range<NodeIndex>,
 }
@@ -21,18 +23,16 @@ impl MixtureOutgoingFractions {
             .max()
             .unwrap();
 
-        let shared_data = SharedData {
-            destinations: network.zones().len(),
-            time_steps,
-            temporary_grid: vec![0.; network.zones().len() * time_steps * max_outgoing_links],
-        };
-        let shared_data = Rc::new(RefCell::new(shared_data));
+        let temporary_grid = vec![0.; network.zones().len() * time_steps * max_outgoing_links];
+        let temporary_grid = Rc::new(RefCell::new(temporary_grid));
 
         let mut mof_intersections = Vec::with_capacity(used_nodes.len());
         for n in used_nodes.clone() {
             mof_intersections.push(MofIntersection {
-                shared_data: shared_data.clone(),
+                temporary_grid: temporary_grid.clone(),
                 num_outgoing_links: network.outgoing_links(n).len(),
+                destinations: network.zones().len(),
+                time_steps,
                 offsets: vec![0; network.zones().len() + 1],
                 indices: vec![],
                 values: vec![],
@@ -41,7 +41,9 @@ impl MixtureOutgoingFractions {
         }
 
         Self {
-            shared_data,
+            destinations: network.zones().len(),
+            time_steps,
+            temporary_grid,
             mof_intersections,
             used_nodes,
         }
@@ -53,23 +55,22 @@ impl MixtureOutgoingFractions {
 
     pub fn set_fraction(&mut self, n: usize, tn: usize, d: usize, j: usize, value: f64) {
         debug_assert!(self.used_nodes.contains(&n));
-        debug_assert!(tn < self.shared_data.borrow().time_steps);
-        debug_assert!(d < self.shared_data.borrow().destinations);
+        debug_assert!(tn < self.time_steps);
+        debug_assert!(d < self.destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
         debug_assert!((0.0..=1.).contains(&value));
         let n = n - self.used_nodes.start;
 
-        let mut shared_data = self.shared_data.borrow_mut();
-        let destinations = shared_data.destinations;
+        let mut temporary_grid = self.temporary_grid.borrow_mut();
         let num_ougoing_links = self.mof_intersections[n].num_outgoing_links;
-        shared_data.temporary_grid
-            [tn * destinations * num_ougoing_links + d * num_ougoing_links + j] = value;
+        temporary_grid[tn * self.destinations * num_ougoing_links + d * num_ougoing_links + j] =
+            value;
     }
 
     pub fn get_fraction(&self, n: usize, tn: usize, d: usize, j: usize) -> f64 {
         debug_assert!(n < self.mof_intersections.len());
-        debug_assert!(tn < self.shared_data.borrow().time_steps);
-        debug_assert!(d < self.shared_data.borrow().destinations);
+        debug_assert!(tn < self.time_steps);
+        debug_assert!(d < self.destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
         let n = n - self.used_nodes.start;
 
@@ -77,19 +78,15 @@ impl MixtureOutgoingFractions {
     }
 
     pub fn destinations(&self) -> usize {
-        self.shared_data.borrow().destinations
+        self.destinations
     }
 }
 
-struct SharedData {
+struct MofIntersection {
+    temporary_grid: Rc<RefCell<Vec<f64>>>,
+    num_outgoing_links: usize,
     destinations: usize,
     time_steps: usize,
-    temporary_grid: Vec<f64>,
-}
-
-struct MofIntersection {
-    shared_data: Rc<RefCell<SharedData>>,
-    num_outgoing_links: usize,
     offsets: Vec<usize>,
     indices: Vec<usize>,
     values: Vec<isize>,
@@ -117,11 +114,9 @@ impl MofIntersection {
     }
 
     fn compress(&mut self) {
-        let &mut SharedData {
-            ref destinations,
-            ref time_steps,
-            ref mut temporary_grid,
-        } = &mut *self.shared_data.borrow_mut();
+        let mut temporary_grid = self.temporary_grid.borrow_mut();
+        let destinations = self.destinations;
+        let time_steps = self.time_steps;
 
         // 1. Create the index grid and pool of unique vectors.
         let mut index_grid = vec![0isize; destinations * time_steps];
@@ -129,8 +124,8 @@ impl MofIntersection {
         let mut pool_len = 0;
         let mut vector_to_pool_index: BTreeMap<OrdVec, usize> = BTreeMap::new();
 
-        for d in 0..*destinations {
-            for tn in 0..*time_steps {
+        for d in 0..destinations {
+            for tn in 0..time_steps {
                 // The slice of the vector for (tn, d).
                 let start =
                     tn * destinations * self.num_outgoing_links + d * self.num_outgoing_links;
@@ -172,9 +167,9 @@ impl MofIntersection {
 
         // 2. Compress the grid.
         // 2.1. Initialize the offsets for the CSR
-        for d in 0..*destinations {
+        for d in 0..destinations {
             let mut num_periods = 1;
-            for tn in 1..*time_steps {
+            for tn in 1..time_steps {
                 if index_grid[tn * destinations + d] != index_grid[(tn - 1) * destinations + d] {
                     num_periods += 1;
                 }
@@ -187,7 +182,7 @@ impl MofIntersection {
         self.indices = vec![0; *total_num_periods];
         self.values = vec![0; *total_num_periods];
 
-        for d in 0..*destinations {
+        for d in 0..destinations {
             // values[i] is the value that lies in the grid on positions from
             // grid[indices[i] * destinations + d] to
             // grid[(indices[i + 1] - 1) * destinations + d].
@@ -196,7 +191,7 @@ impl MofIntersection {
             self.indices[self.offsets[d]] = 0;
             self.values[self.offsets[d]] = index_grid[d];
             let mut i = self.offsets[d] + 1;
-            for tn in 1..*time_steps {
+            for tn in 1..time_steps {
                 if index_grid[tn * destinations + d] != index_grid[(tn - 1) * destinations + d] {
                     self.indices[i] = tn;
                     self.values[i] = index_grid[tn * destinations + d];
