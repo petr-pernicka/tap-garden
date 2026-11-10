@@ -23,6 +23,7 @@ inherits = "release"
 debug-assertions = true
 overflow-checks = true
 panic = "unwind"
+debug = true
 
 [[bench]]
 name = "mixture_flow"
