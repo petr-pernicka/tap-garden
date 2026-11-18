@@ -18,22 +18,22 @@ impl OutgoingLinkIndices {
         }
     }
 
-    pub fn set_index(&mut self, n: usize, tn: usize, d: usize, index: u8) {
-        debug_assert!(self.used_nodes.contains(&n));
+    pub fn set_index(&mut self, tn: usize, n: usize, d: usize, index: u8) {
         debug_assert!(tn < self.time_steps);
+        debug_assert!(self.used_nodes.contains(&n));
         debug_assert!(d < self.destinations);
         let n = n - self.used_nodes.start;
 
-        self.data[d * self.time_steps * self.used_nodes.len() + tn * self.used_nodes.len() + n] =
+        self.data[tn * self.destinations * self.used_nodes.len() + n * self.destinations + d] =
             index;
     }
 
-    pub fn get_index(&self, n: usize, tn: usize, d: usize) -> u8 {
-        debug_assert!(self.used_nodes.contains(&n));
+    pub fn get_index(&self, tn: usize, n: usize, d: usize) -> u8 {
         debug_assert!(tn < self.time_steps);
+        debug_assert!(self.used_nodes.contains(&n));
         debug_assert!(d < self.destinations);
         let n = n - self.used_nodes.start;
 
-        self.data[d * self.time_steps * self.used_nodes.len() + tn * self.used_nodes.len() + n]
+        self.data[tn * self.destinations * self.used_nodes.len() + n * self.destinations + d]
     }
 }

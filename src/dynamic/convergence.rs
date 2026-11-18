@@ -76,7 +76,7 @@ fn retrace(
             // with # of outgoing links = 1.
             0
         } else {
-            indices.get_index(tail, time_capped, destination) as usize
+            indices.get_index(time_capped, tail, destination) as usize
         };
 
         let link = &network.outgoing_links(tail)[jk];

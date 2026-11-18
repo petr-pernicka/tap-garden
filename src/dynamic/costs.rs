@@ -25,27 +25,27 @@ impl Costs {
         }
     }
 
-    pub fn set_cost(&mut self, n: usize, tn: usize, d: usize, cost: f64) {
-        debug_assert!(self.used_nodes.contains(&n));
+    pub fn set_cost(&mut self, tn: usize, n: usize, d: usize, cost: f64) {
         debug_assert!(
             tn < self.time_steps,
             "Cost set for invalid time {tn}, must be lower than {}",
             self.time_steps
         );
+        debug_assert!(self.used_nodes.contains(&n));
         debug_assert!(d < self.destinations);
         debug_assert!(cost >= 0.0);
         let n = n - self.used_nodes.start;
 
-        self.data[d * self.time_steps * self.used_nodes.len() + tn * self.used_nodes.len() + n] =
+        self.data[tn * self.destinations * self.used_nodes.len() + n * self.destinations + d] =
             cost;
     }
 
-    pub fn get_cost(&self, n: usize, tn: usize, d: usize) -> f64 {
-        debug_assert!(self.used_nodes.contains(&n));
+    pub fn get_cost(&self, tn: usize, n: usize, d: usize) -> f64 {
         debug_assert!(tn < self.time_steps);
+        debug_assert!(self.used_nodes.contains(&n));
         debug_assert!(d < self.destinations);
         let n = n - self.used_nodes.start;
 
-        self.data[d * self.time_steps * self.used_nodes.len() + tn * self.used_nodes.len() + n]
+        self.data[tn * self.destinations * self.used_nodes.len() + n * self.destinations + d]
     }
 }

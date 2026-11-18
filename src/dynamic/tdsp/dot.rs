@@ -52,10 +52,10 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         }
 
         // 4. Set the rest of the values in decreasing order of time
-        for destination in network.zones() {
-            for tn in (0..=time_steps - 2).rev() {
-                for node in network.routed_nodes() {
-                    for (i, jk) in network.outgoing_links(node).iter().enumerate() {
+        for tn in (0..=time_steps - 2).rev() {
+            for node in network.routed_nodes() {
+                for (i, jk) in network.outgoing_links(node).iter().enumerate() {
+                    for destination in network.zones() {
                         let new_cost = Self::compute_cost(
                             jk,
                             tn,
@@ -69,9 +69,9 @@ impl<FD: FundamentalDiagram> DOT<FD> {
                             free_flow_travel_time,
                         );
 
-                        if new_cost < costs.get_cost(node, tn, destination) {
-                            costs.set_cost(node, tn, destination, new_cost);
-                            indices.set_index(node, tn, destination, i as u8);
+                        if new_cost < costs.get_cost(tn, node, destination) {
+                            costs.set_cost(tn, node, destination, new_cost);
+                            indices.set_index(tn, node, destination, i as u8);
                         }
                     }
                 }
@@ -111,7 +111,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
             if network.routed_nodes().contains(&link.head()) {
                 break;
             }
-            
+
             let next_link = &network.outgoing_links(link.head())[0];
             let tt = link_travel_time(
                 tn as f64 + travel_time / step_size,
@@ -120,7 +120,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
                 step_size,
                 free_flow_travel_time[next_link.index()],
             );
-            
+
             travel_time += tt;
             link = next_link;
         }
@@ -137,7 +137,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // The (normalized rounded) time at which a vehicle departing on the link at tn
         // would arrive at the end of the link
         let time_of_arrival = (tn + normalized_travel_time_rounded).min(time_steps - 1);
-        travel_time + costs.get_cost(link.head(), time_of_arrival, destination)
+        travel_time + costs.get_cost(time_of_arrival, link.head(), destination)
     }
 
     fn run_sssp(
@@ -168,8 +168,8 @@ impl<FD: FundamentalDiagram> DOT<FD> {
                     .position(|link| link.index() == sssp.tree()[node])
                     .unwrap();
 
-                indices.set_index(node, time_steps - 1, destination, outgoing_index as u8);
-                costs.set_cost(node, time_steps - 1, destination, sssp.distance()[node]);
+                indices.set_index(time_steps - 1, node, destination, outgoing_index as u8);
+                costs.set_cost(time_steps - 1, node, destination, sssp.distance()[node]);
             }
         }
     }

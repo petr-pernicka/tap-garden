@@ -38,7 +38,7 @@ impl<FD> RGP<FD> {
 
         numerator / (RO * alpha)
     }
-    
+
     pub fn increment_eta_bad(&mut self, criterion_prev: f64, criterion_now: f64) {
         if criterion_now > ETA_3 * criterion_prev {
             self.eta_bad += 1;
@@ -65,12 +65,12 @@ impl<FD: FundamentalDiagram> DynamicUserEquilibrium<MixtureOutgoingFractions, FD
         for n in network.routed_nodes() {
             for tn in 0..time_steps {
                 for d in network.zones() {
-                    let min_cost = costs.get_cost(n, tn, d);
+                    let min_cost = costs.get_cost(tn, n, d);
                     if min_cost == 0.0 || min_cost == f64::INFINITY {
                         continue;
                     }
 
-                    let shortest_path_link = indices.get_index(n, tn, d);
+                    let shortest_path_link = indices.get_index(tn, n, d);
 
                     let mut sum = 0.0;
                     for (jk, outgoing_link) in network.outgoing_links(n).iter().enumerate() {
@@ -90,7 +90,7 @@ impl<FD: FundamentalDiagram> DynamicUserEquilibrium<MixtureOutgoingFractions, FD
                             cumulative_flows,
                             free_flow_travel_time,
                         );
-	                    
+
 	                    debug_assert!(cost >= min_cost);
 
                         let g = self.scale_factor(min_cost, cost, alpha);
