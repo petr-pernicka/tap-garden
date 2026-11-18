@@ -2,7 +2,7 @@ use crate::dynamic::loading::link::diagram::FundamentalDiagram;
 use crate::dynamic::routing::MixtureOutgoingFractions;
 use crate::dynamic::travel_time::link_travel_time;
 use crate::dynamic::{Costs, Cvn, DynamicNetwork, OutgoingLinkIndices};
-use crate::network::Link;
+use crate::network::{Link, NodeIndex};
 use crate::static_::sssp::SSSP;
 use std::marker::PhantomData;
 
@@ -55,20 +55,24 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         for tn in (0..=time_steps - 2).rev() {
             for node in network.routed_nodes() {
                 for (i, jk) in network.outgoing_links(node).iter().enumerate() {
+                    let (travel_time, time_of_arrival, head) = Self::compute_cost(
+                        jk,
+                        tn,
+                        time_steps,
+                        step_size,
+                        travel_times,
+                        network,
+                        cumulative_flows,
+                        free_flow_travel_time,
+                    );
+                    
                     for destination in network.zones() {
-                        let new_cost = Self::compute_cost(
-                            jk,
-                            tn,
-                            destination,
-                            &costs,
-                            time_steps,
-                            step_size,
-                            travel_times,
-                            network,
-                            cumulative_flows,
-                            free_flow_travel_time,
-                        );
-
+                        let new_cost = if jk.head() == destination {
+                            travel_times[jk.index()][tn + 1]
+                        } else { 
+                            travel_time + costs.get_cost(time_of_arrival, head, destination)
+                        };
+                        
                         if new_cost < costs.get_cost(tn, node, destination) {
                             costs.set_cost(tn, node, destination, new_cost);
                             indices.set_index(tn, node, destination, i as u8);
@@ -86,23 +90,16 @@ impl<FD: FundamentalDiagram> DOT<FD> {
     pub fn compute_cost<'a>(
         mut link: &'a Link,
         tn: usize,
-        destination: usize,
-        costs: &Costs,
         time_steps: usize,
         step_size: f64,
         travel_times: &[Vec<f64>],
         network: &'a DynamicNetwork<MixtureOutgoingFractions, FD>,
         cumulative_flows: &[(Cvn, Cvn)],
         free_flow_travel_time: &[f64],
-    ) -> f64 {
+    ) -> (f64, usize, NodeIndex) {
         let mut travel_time = travel_times[link.index()][tn + 1];
         if travel_time == f64::INFINITY {
-            return f64::INFINITY;
-        }
-
-        // Used in place of step 2. (cost at the destination is 0 for all tn)
-        if link.head() == destination {
-            return travel_time;
+            return (f64::INFINITY, 0, 0);
         }
 
         // If the head node is not routed (i.e. has only 1 outgoing link), the single
@@ -137,7 +134,7 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         // The (normalized rounded) time at which a vehicle departing on the link at tn
         // would arrive at the end of the link
         let time_of_arrival = (tn + normalized_travel_time_rounded).min(time_steps - 1);
-        travel_time + costs.get_cost(time_of_arrival, link.head(), destination)
+        (travel_time, time_of_arrival, link.head())
     }
 
     fn run_sssp(
