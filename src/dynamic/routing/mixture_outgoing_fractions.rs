@@ -1,16 +1,14 @@
 use crate::network::{Network, NodeIndex};
 use get_size2::GetSize;
-use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::ops::Range;
-use std::rc::Rc;
 
 #[derive(GetSize)]
 pub struct MixtureOutgoingFractions {
     destinations: usize,
     time_steps: usize,
-    temporary_grid: Rc<RefCell<Vec<f64>>>,
+    temporary_grid: Vec<f64>,
     mof_intersections: Vec<MofIntersection>,
     used_nodes: Range<NodeIndex>,
 }
@@ -26,12 +24,10 @@ impl MixtureOutgoingFractions {
             .unwrap();
 
         let temporary_grid = vec![0.; network.zones().len() * time_steps * max_outgoing_links];
-        let temporary_grid = Rc::new(RefCell::new(temporary_grid));
 
         let mut mof_intersections = Vec::with_capacity(used_nodes.len());
         for n in used_nodes.clone() {
             mof_intersections.push(MofIntersection {
-                temporary_grid: temporary_grid.clone(),
                 num_outgoing_links: network.outgoing_links(n).len(),
                 destinations: network.zones().len(),
                 time_steps,
@@ -51,31 +47,35 @@ impl MixtureOutgoingFractions {
         }
     }
 
-    pub fn compress_for_node(&mut self, node: usize) {
-        self.mof_intersections[node].compress()
+    pub fn compress_for_node(&mut self, n: usize) {
+        debug_assert!(self.used_nodes.contains(&n));
+        let n = n - self.used_nodes.start;
+        
+        self.mof_intersections[n].compress(&mut self.temporary_grid)
     }
 
     pub fn set_fraction(&mut self, n: usize, tn: usize, d: usize, j: usize, value: f64) {
         debug_assert!(self.used_nodes.contains(&n));
+        let n = n - self.used_nodes.start;
+        
         debug_assert!(tn < self.time_steps);
         debug_assert!(d < self.destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
         debug_assert!((0.0..=1.).contains(&value));
-        let n = n - self.used_nodes.start;
-
-        let mut temporary_grid = self.temporary_grid.borrow_mut();
+        
         let num_ougoing_links = self.mof_intersections[n].num_outgoing_links;
-        temporary_grid[tn * self.destinations * num_ougoing_links + d * num_ougoing_links + j] =
-            value;
+        self.temporary_grid
+            [tn * self.destinations * num_ougoing_links + d * num_ougoing_links + j] = value;
     }
 
     pub fn get_fraction(&self, n: usize, tn: usize, d: usize, j: usize) -> f64 {
-        debug_assert!(n < self.mof_intersections.len());
+        debug_assert!(self.used_nodes.contains(&n));
+        let n = n - self.used_nodes.start;
+        
         debug_assert!(tn < self.time_steps);
         debug_assert!(d < self.destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
-        let n = n - self.used_nodes.start;
-
+        
         self.mof_intersections[n].get_fraction(tn, d, j)
     }
 
@@ -115,7 +115,6 @@ impl MixtureOutgoingFractions {
 /// in the grid
 #[derive(GetSize)]
 struct MofIntersection {
-    temporary_grid: Rc<RefCell<Vec<f64>>>,
     num_outgoing_links: usize,
     destinations: usize,
     time_steps: usize,
@@ -145,8 +144,7 @@ impl MofIntersection {
         }
     }
 
-    fn compress(&mut self) {
-        let mut temporary_grid = self.temporary_grid.borrow_mut();
+    fn compress(&mut self, temporary_grid: &mut [f64]) {
         let destinations = self.destinations;
         let time_steps = self.time_steps;
 
