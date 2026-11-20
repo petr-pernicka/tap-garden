@@ -25,6 +25,10 @@ overflow-checks = true
 panic = "unwind"
 debug = true
 
+[profile.release-profile]
+inherits = "release-full"
+debug = true
+
 [[bench]]
 name = "mixture_flow"
 harness = false

@@ -1,10 +1,10 @@
 use crate::network::{Network, NodeIndex};
+use get_size2::GetSize;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::ops::Range;
 use std::rc::Rc;
-use get_size2::GetSize;
 
 #[derive(GetSize)]
 pub struct MixtureOutgoingFractions {
@@ -84,6 +84,35 @@ impl MixtureOutgoingFractions {
     }
 }
 
+/// This struct retains the compressed mixture fractions for a single node. The
+/// uncompressed number of values is `time_steps * destinations * num_outgoing_links`.
+/// The compression interprets the values as a `time_steps x destinations` **grid** of
+/// **vectors**, each of length `num_outgoing_links`. The compression consists of 2 phases.
+///
+/// # Phase 1
+/// We observe that many of the vectors has a 1 at some index and the rest are 0s. These
+/// are called singletons. A singleton can be represented by a single integer - index of
+/// the 1 in the vector. Furthermore, non-singleton vectors may have duplicates in the
+/// grid.
+///
+/// Phase 1 compresses such that it replaces each vector with signed integer:
+/// - if the vector is a singleton with 1 at index `i`, it is replaced by `i`,
+/// - if the vector is not a singleton, we check if it is in a map
+///   *non-singleton vector -> j*:
+///     - if yes, the vector is replaced by `-(j + 1)`,
+///     - if not, the vector is added to the map with new `j`.
+///
+/// The `j`s start from 0 and are incremented with each not-yet-encountered non-singleton
+/// vector. The phase ends with creating the pool of unique non-singleton vectors from the
+/// map - `j`s serve as indices into the pool. Values `i >= 0` in the grid now represent
+/// singletons while values `j < 0` represent non-singletons.
+///
+/// Both the pool and the integer grid are stored in row-major order to further decrease
+/// memory consumption.
+///
+/// # Phase 2
+/// We now observe that there are long sequences of constant values across many time steps
+/// in the grid
 #[derive(GetSize)]
 struct MofIntersection {
     temporary_grid: Rc<RefCell<Vec<f64>>>,
@@ -142,7 +171,7 @@ impl MofIntersection {
                     // Vector is singleton with sole 1 at singleton_index. The vector can
                     // be represented only by singleton_index.
 
-                    index_grid[tn * destinations + d] = singleton_index;
+                    index_grid[d * time_steps + tn] = singleton_index;
                 } else {
                     // If not, set the value in grid to the index of the vector in the
                     // pool of unique vectors, adding it if necessary.
@@ -151,10 +180,10 @@ impl MofIntersection {
                     let pool_index = vector_to_pool_index.get(&OrdVec(vector));
 
                     if let Some(pool_index) = pool_index {
-                        index_grid[tn * destinations + d] = -(*pool_index as isize + 1);
+                        index_grid[d * time_steps + tn] = -(*pool_index as isize + 1);
                     } else {
                         vector_to_pool_index.insert(OrdVec(vector), pool_len);
-                        index_grid[tn * destinations + d] = -(pool_len as isize + 1);
+                        index_grid[d * time_steps + tn] = -(pool_len as isize + 1);
                         pool_len += 1;
                     }
                 }
@@ -173,7 +202,7 @@ impl MofIntersection {
         for d in 0..destinations {
             let mut num_periods = 1;
             for tn in 1..time_steps {
-                if index_grid[tn * destinations + d] != index_grid[(tn - 1) * destinations + d] {
+                if index_grid[d * time_steps + tn] != index_grid[d * time_steps + tn - 1] {
                     num_periods += 1;
                 }
             }
@@ -192,19 +221,19 @@ impl MofIntersection {
             // That is, on the positions in the grid where t is in interval
             // [indices[i], indices[i + 1]) and for this destination.
             self.indices[self.offsets[d]] = 0;
-            self.values[self.offsets[d]] = index_grid[d];
+            self.values[self.offsets[d]] = index_grid[d * time_steps];
             let mut i = self.offsets[d] + 1;
             for tn in 1..time_steps {
-                if index_grid[tn * destinations + d] != index_grid[(tn - 1) * destinations + d] {
+                if index_grid[d * time_steps + tn] != index_grid[d * time_steps + tn - 1] {
                     self.indices[i] = tn;
-                    self.values[i] = index_grid[tn * destinations + d];
+                    self.values[i] = index_grid[d * time_steps + tn];
                     i += 1;
                 }
             }
         }
 
         self.pool = pool;
-        temporary_grid.fill(0.);
+        temporary_grid[..destinations * time_steps * self.num_outgoing_links].fill(0.);
     }
 
     fn is_singleton(vector: &[f64]) -> isize {
