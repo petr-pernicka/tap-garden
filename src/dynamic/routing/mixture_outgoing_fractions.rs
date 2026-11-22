@@ -68,15 +68,14 @@ impl MixtureOutgoingFractions {
             [tn * self.destinations * num_ougoing_links + d * num_ougoing_links + j] = value;
     }
 
-    pub fn get_fraction(&self, n: usize, tn: usize, d: usize, j: usize) -> f64 {
+    pub fn get_fractions(&self, n: usize, tn: usize, d: usize) -> &[f64] {
         debug_assert!(self.used_nodes.contains(&n));
         let n = n - self.used_nodes.start;
         
         debug_assert!(tn < self.time_steps);
         debug_assert!(d < self.destinations);
-        debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
         
-        self.mof_intersections[n].get_fraction(tn, d, j)
+        self.mof_intersections[n].get_fractions(tn, d)
     }
 
     pub fn destinations(&self) -> usize {
@@ -120,12 +119,12 @@ struct MofIntersection {
     time_steps: usize,
     offsets: Vec<usize>,
     indices: Vec<usize>,
-    values: Vec<isize>,
+    values: Vec<usize>,
     pool: Vec<f64>,
 }
 
 impl MofIntersection {
-    fn get_fraction(&self, tn: usize, d: usize, j: usize) -> f64 {
+    fn get_fractions(&self, tn: usize, d: usize) -> &[f64] {
         let mut i = self.offsets[d];
         let last = self.offsets[d + 1] - 1;
 
@@ -134,14 +133,7 @@ impl MofIntersection {
         }
 
         let index = self.values[i];
-        if index >= 0 {
-            // vector[n, tn, d] is a singleton
-            if index as usize == j { 1. } else { 0. }
-        } else {
-            // vector is in the pool
-            let pool_index = -(index + 1) as usize;
-            self.pool[pool_index * self.num_outgoing_links + j]
-        }
+        &self.pool[index * self.num_outgoing_links..(index + 1) * self.num_outgoing_links]
     }
 
     fn compress(&mut self, temporary_grid: &mut [f64]) {
@@ -149,7 +141,7 @@ impl MofIntersection {
         let time_steps = self.time_steps;
 
         // 1. Create the index grid and pool of unique vectors.
-        let mut index_grid = vec![0isize; destinations * time_steps];
+        let mut index_grid = vec![0; destinations * time_steps];
 
         let mut pool_len = 0;
         let mut vector_to_pool_index: BTreeMap<OrdVec, usize> = BTreeMap::new();
@@ -163,27 +155,16 @@ impl MofIntersection {
                     tn * destinations * self.num_outgoing_links + (d + 1) * self.num_outgoing_links;
                 let vector = &temporary_grid[start..end];
 
-                let singleton_index = Self::is_singleton(vector);
+                // Set the value in grid to the index of the vector in the pool of unique
+                // vectors, adding it if necessary.
+                let pool_index = vector_to_pool_index.get(&OrdVec(vector));
 
-                if singleton_index >= 0 {
-                    // Vector is singleton with sole 1 at singleton_index. The vector can
-                    // be represented only by singleton_index.
-
-                    index_grid[d * time_steps + tn] = singleton_index;
+                if let Some(pool_index) = pool_index {
+                    index_grid[d * time_steps + tn] = *pool_index;
                 } else {
-                    // If not, set the value in grid to the index of the vector in the
-                    // pool of unique vectors, adding it if necessary.
-                    // Index i into the pool is stored in the grid as -(i + 1),
-                    // because non-negative integers represent singletons.
-                    let pool_index = vector_to_pool_index.get(&OrdVec(vector));
-
-                    if let Some(pool_index) = pool_index {
-                        index_grid[d * time_steps + tn] = -(*pool_index as isize + 1);
-                    } else {
-                        vector_to_pool_index.insert(OrdVec(vector), pool_len);
-                        index_grid[d * time_steps + tn] = -(pool_len as isize + 1);
-                        pool_len += 1;
-                    }
+                    vector_to_pool_index.insert(OrdVec(vector), pool_len);
+                    index_grid[d * time_steps + tn] = pool_len;
+                    pool_len += 1;
                 }
             }
         }
@@ -232,19 +213,6 @@ impl MofIntersection {
 
         self.pool = pool;
         temporary_grid[..destinations * time_steps * self.num_outgoing_links].fill(0.);
-    }
-
-    fn is_singleton(vector: &[f64]) -> isize {
-        for (i, val) in vector.iter().enumerate() {
-            if *val == 1. {
-                return i as isize;
-            }
-            if *val > 0. {
-                return -1;
-            }
-        }
-
-        -1
     }
 }
 

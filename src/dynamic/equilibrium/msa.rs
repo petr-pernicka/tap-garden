@@ -37,14 +37,15 @@ impl<FD: FundamentalDiagram> DynamicUserEquilibrium<MixtureOutgoingFractions, FD
         for n in network.routed_nodes() {
             for tn in 0..time_steps {
                 for d in network.zones() {
-                    for jk in 0..network.outgoing_links(n).len() {
-                        let current_fraction = mofs.get_fraction(n, tn, d, jk);
+                    let current_fractions = mofs.get_fractions(n, tn, d);
+                    debug_assert!(current_fractions.len() == network.outgoing_links(n).len());
 
+                    for (jk, fraction) in current_fractions.iter().enumerate() {
                         let is_link_on_shortest_path =
                             f64::from(indices.get_index(tn, n, d) == jk as u8);
 
                         let new_fraction =
-                            (1.0 - lambda) * current_fraction + is_link_on_shortest_path * lambda;
+                            (1.0 - lambda) * fraction + is_link_on_shortest_path * lambda;
 
                         mofs_new.set_fraction(n, tn, d, jk, new_fraction);
                     }

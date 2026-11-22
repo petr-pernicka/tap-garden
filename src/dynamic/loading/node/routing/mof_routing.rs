@@ -31,9 +31,9 @@ impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
                 let destination = mixture_sending_flows[ij].destination(d);
                 let portion = mixture_sending_flows[ij].portion(d);
 
+                let fractions = mofs.get_fractions(self.index, tn, destination as usize);
                 for jk in 0..receiving_flows.len() {
-                    total_turning_fractions[(ij, jk)] +=
-                        portion * mofs.get_fraction(self.index, tn, destination as usize, jk);
+                    total_turning_fractions[(ij, jk)] += portion * fractions[jk];
                 }
             }
         }
@@ -86,7 +86,7 @@ impl RoutedModel<MixtureOutgoingFractions> for MofRoutingModel {
                     if mixture_inflows[ij].destination(counters[ij] as usize) as usize == d {
                         sum += mixture_inflows[ij].portion(counters[ij] as usize)
                             * mixture_inflows[ij].total_flow()
-                            * mofs.get_fraction(self.index, tn, d, jk);
+                            * mofs.get_fractions(self.index, tn, d)[jk];
                         counters[ij] += 1;
                     }
 
