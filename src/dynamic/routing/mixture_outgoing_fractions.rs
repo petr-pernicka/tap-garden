@@ -50,19 +50,19 @@ impl MixtureOutgoingFractions {
     pub fn compress_for_node(&mut self, n: usize) {
         debug_assert!(self.used_nodes.contains(&n));
         let n = n - self.used_nodes.start;
-        
+
         self.mof_intersections[n].compress(&mut self.temporary_grid)
     }
 
     pub fn set_fraction(&mut self, n: usize, tn: usize, d: usize, j: usize, value: f64) {
         debug_assert!(self.used_nodes.contains(&n));
         let n = n - self.used_nodes.start;
-        
+
         debug_assert!(tn < self.time_steps);
         debug_assert!(d < self.destinations);
         debug_assert!(j < self.mof_intersections[n].num_outgoing_links);
         debug_assert!((0.0..=1.).contains(&value));
-        
+
         let num_ougoing_links = self.mof_intersections[n].num_outgoing_links;
         self.temporary_grid
             [tn * self.destinations * num_ougoing_links + d * num_ougoing_links + j] = value;
@@ -71,10 +71,10 @@ impl MixtureOutgoingFractions {
     pub fn get_fractions(&self, n: usize, tn: usize, d: usize) -> &[f64] {
         debug_assert!(self.used_nodes.contains(&n));
         let n = n - self.used_nodes.start;
-        
+
         debug_assert!(tn < self.time_steps);
         debug_assert!(d < self.destinations);
-        
+
         self.mof_intersections[n].get_fractions(tn, d)
     }
 
@@ -125,15 +125,19 @@ struct MofIntersection {
 
 impl MofIntersection {
     fn get_fractions(&self, tn: usize, d: usize) -> &[f64] {
-        let mut i = self.offsets[d];
-        let last = self.offsets[d + 1] - 1;
+        unsafe {
+            let mut i = *self.offsets.get_unchecked(d);
+            let last = *self.offsets.get_unchecked(d + 1) - 1;
 
-        while i < last && self.indices[i + 1] <= tn {
-            i += 1;
+            while i < last && *self.indices.get_unchecked(i + 1) <= tn {
+                i += 1;
+            }
+
+            let index = *self.values.get_unchecked(i);
+            self.pool.get_unchecked(
+                index * self.num_outgoing_links..(index + 1) * self.num_outgoing_links,
+            )
         }
-
-        let index = self.values[i];
-        &self.pool[index * self.num_outgoing_links..(index + 1) * self.num_outgoing_links]
     }
 
     fn compress(&mut self, temporary_grid: &mut [f64]) {
