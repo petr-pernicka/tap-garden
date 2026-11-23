@@ -65,14 +65,14 @@ impl<FD: FundamentalDiagram> DOT<FD> {
                         cumulative_flows,
                         free_flow_travel_time,
                     );
-                    
+
                     for destination in network.zones() {
                         let new_cost = if jk.head() == destination {
                             travel_times[jk.index()][tn + 1]
-                        } else { 
+                        } else {
                             travel_time + costs.get_cost(time_of_arrival, head, destination)
                         };
-                        
+
                         if new_cost < costs.get_cost(tn, node, destination) {
                             costs.set_cost(tn, node, destination, new_cost);
                             indices.set_index(tn, node, destination, i as u8);
@@ -83,6 +83,36 @@ impl<FD: FundamentalDiagram> DOT<FD> {
         }
 
         (costs, indices)
+    }
+
+    pub fn travel_time<'a>(
+        mut link: &'a Link,
+        tn: usize,
+        time_steps: usize,
+        step_size: f64,
+        travel_times: &[Vec<f64>],
+        network: &'a DynamicNetwork<MixtureOutgoingFractions, FD>,
+        cumulative_flows: &[(Cvn, Cvn)],
+        free_flow_travel_time: &[f64],
+        destination: NodeIndex,
+        costs: &Costs,
+    ) -> f64 {
+        let (travel_time, time_of_arrival, head) = Self::compute_cost(
+            link,
+            tn,
+            time_steps,
+            step_size,
+            travel_times,
+            network,
+            cumulative_flows,
+            free_flow_travel_time,
+        );
+        
+        if link.head() == destination {
+            travel_times[link.index()][tn + 1]
+        } else {
+            travel_time + costs.get_cost(time_of_arrival, head, destination)
+        }
     }
 
     /// Computes the travel time from `link.tail` to `destination`, when departing on the
