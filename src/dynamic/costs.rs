@@ -1,6 +1,8 @@
 use crate::network::NodeIndex;
 use std::ops::Range;
+use get_size2::GetSize;
 
+#[derive(GetSize)]
 pub struct Costs {
     data: Vec<f64>,
     used_nodes: Range<NodeIndex>,

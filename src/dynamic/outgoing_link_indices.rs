@@ -1,6 +1,8 @@
 use crate::network::NodeIndex;
 use std::ops::Range;
+use get_size2::GetSize;
 
+#[derive(GetSize)]
 pub struct OutgoingLinkIndices {
     data: Vec<u8>,
     used_nodes: Range<NodeIndex>,

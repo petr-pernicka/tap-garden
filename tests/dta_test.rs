@@ -85,6 +85,8 @@ fn dta_test_parameterized(
         println!("RG: {rg:.2e}");
         println!("AEC: {aec:.2e}");
         println!("Size of routing parameters: {} kB", routing_params.get_size() / 1024);
+        println!("Size of costs: {} kB", _costs.get_size() / 1024);
+        println!("Size of indices: {} kB", indices.get_size() / 1024);
 
         for i in 1..=msa_steps {
             println!("======= Iteration {i} =======");
@@ -150,6 +152,8 @@ fn dta_test_parameterized(
             println!("RG: {rg:.2e}");
             println!("AEC: {aec:.2e}");
             println!("Size of routing parameters: {} kB", routing_params.get_size() / 1024);
+            println!("Size of costs: {} kB", _costs.get_size() / 1024);
+            println!("Size of indices: {} kB", indices.get_size() / 1024);
         }
     });
 
